@@ -1,3 +1,8 @@
+/*
+ * This is the inmemory buffer interface for Layer 0
+ * By Yan
+ */
+
 #include "Parameters.h"
 
 typedef struct{

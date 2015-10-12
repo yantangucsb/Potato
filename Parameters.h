@@ -1,3 +1,7 @@
+/*
+ * Set any global parameters here
+ */
+
 #include<stdint.h>
 
 typedef long size_type;
