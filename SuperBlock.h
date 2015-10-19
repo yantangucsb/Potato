@@ -13,13 +13,22 @@ typedef struct{
 
     //the number of free blocks
     size_type numOfFreeBlocks;
-    
+
+    /*
+     * the old cache mechanism for data block
     //a list of free blocks available
     addr_type freeBlockList[BLOCK_NUM];
     
     //the index of the next free block in the free block list
     size_type freeBlockIndex;
-    
+    */
+
+    //addr for head of the data block free list
+    addr_type dataBlockFreeListHead;
+
+    //addr for tail of the data block free list
+    addr_type dataBlockFreeListTail;
+
     //the size of inode list
     size_type inodeListSize;
 

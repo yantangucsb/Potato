@@ -6,7 +6,20 @@
 #include <stdbool.h>
 #include "Parameters.h"
 
+typedef enum {
+    Regular = 0,
+    Directory = 1,
+    CharactorDeviceFile = 2,
+    BlockDeviceFile = 3,
+    LocalSocketFile = 4,
+    Pipes = 5,
+    SymbolicLink = 6
+} FileType;
+
 typedef struct Inode{
+    //Reserve the space for the flag of used
+    bool used;
+
     //File owner identifer: individual owner
     char* fileOwner[FILE_OWNER_LENGTH];
 
@@ -15,7 +28,7 @@ typedef struct Inode{
 
     //File type: regular '-', directory 'd', character device file 'c', block device file 'b'
     //local socket file 's', FIFO (pipes) 'p', symbolic link 'l'.
-    char fileType;
+    FileType fileType;
 
     //File access permissions: Three classes -- the owner, the group owner and other users.
     //The access rights for each of the three classes can be set individually: read, write and execute
