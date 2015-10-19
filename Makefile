@@ -3,13 +3,18 @@ CC=gcc
 LD=gcc
 
 CFLAGS=-O2 -std=gnu99 -g
-OBJS=DiskEmulator.o
+OBJS=DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o
 FUSEFLAGS=`pkg-config fuse --cflags --libs`
 SRCS=DiskEmulator.c
 
 all: test
 
+init: $(OBJS) InitFSTest
+
 test: $(OBJS) Layer0Test
+
+InitFSTest: $(OBJS) InitFSTest.o
+	$(CC) $(CFLAGS) -o $@ $^
 
 Layer0Test: $(OBJS) Layer0Test.o
 	$(CC) $(CFLAGS) -o $@ $^
@@ -18,5 +23,5 @@ Layer0Test: $(OBJS) Layer0Test.o
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -fr *.o Layer0Test 
+	rm -fr *.o Layer0Test InitFSTest
 

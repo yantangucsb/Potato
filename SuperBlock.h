@@ -4,7 +4,7 @@
  */
 
 #include <stdbool.h>
-#include "Parameters.h"
+#include "Inode.h"
 
 typedef struct{
     
@@ -23,11 +23,11 @@ typedef struct{
     size_type freeBlockIndex;
     */
 
-    //addr for head of the data block free list
-    addr_type pdataBlockFreeListHead;
+    //block no for head of the data block free list
+    addr_type pDataFreeListHead;
 
-    //addr for tail of the data block free list
-    addr_type pdataBlockFreeListTail;
+    //block no for tail of the data block free list
+    addr_type pDataFreeListTail;
 
     //the size of inode list in terms of bytes
     size_type inodeListSize;
@@ -49,3 +49,5 @@ typedef struct{
 } SuperBlock;
 
 ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_block);
+
+ErrorCode getFirstDataBlockNum(SuperBlock* super_block, size_type* addr);

@@ -30,4 +30,16 @@ ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_blo
     }
 
     super_block->modified = 0;
+    
+    return Success;
+}
+
+ErrorCode getFirstDataBlockNum(SuperBlock* super_block, size_type* addr){
+    size_type num_of_inodes_per_block = BLOCK_SIZE/sizeof(Inode);
+    size_type num_of_inode_blocks = super_block->inodeListSize/BLOCK_SIZE;
+    size_type num_of_inodes = num_of_inodes_per_block * num_of_inode_blocks;
+    num_of_inodes++;
+    *addr = num_of_inodes;
+
+    return Success;
 }

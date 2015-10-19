@@ -30,18 +30,22 @@ ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size){
     for(i=0; i<size; i++){
         disk_emulator->disk[i] = 0;
     }
+    return Success;
 }
 
 ErrorCode destroyDisk(DiskEmulator *disk_emulator){
     free(disk_emulator->disk);
+    return Success;
 }
 
 ErrorCode readBlock(DiskEmulator *disk_emulator, int block_num, void* out_buffer){
     memcpy(out_buffer, &disk_emulator->disk[block_num*BLOCK_SIZE], BLOCK_SIZE);   
+    return Success;
 }
 
 ErrorCode writeBlock(DiskEmulator *disk_emulator, int block_num, void *in_buffer){
     memcpy(&disk_emulator->disk[block_num*BLOCK_SIZE], in_buffer, BLOCK_SIZE);
+    return Success;
 }
 
 void printDisk(DiskEmulator *disk_emulator, int block_num){

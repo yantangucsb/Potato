@@ -2,6 +2,8 @@
  * Set any global parameters here
  */
 
+#pragma once
+
 #include<stdint.h>
 
 typedef long size_type;
@@ -14,11 +16,25 @@ typedef enum {
     OutOfBound = 2
 } ErrorCode;
 
+typedef enum {
+    Regular = 0,
+    Directory = 1//,
+//    CharactorDeviceFile = 2,
+//    BlockDeviceFile = 3,
+//    LocalSocketFile = 4,
+//    Pipes = 5,
+//    SymbolicLink = 6
+} FileType;
+
+
 #define BLOCK_SIZE 256
 
 //Super block parameters
 #define FREE_INODE_NUM 10
 #define SUPER_BLOCK_OFFSET 0
+
+//free list parameters
+#define FREE_BLOCK_ARRAY_SIZE BLOCK_SIZE/sizeof(size_type)-1
 
 #define FILE_OWNER_LENGTH 50
 #define PERMISSION_CAT_NUM 3
