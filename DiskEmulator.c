@@ -3,6 +3,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 //#include <sys/mman.h>
 #include "DiskEmulator.h"
 
@@ -22,15 +24,16 @@
     fclose(fp);
 }*/
 
-ErrorCode initDisk(DiskEmulator *disk_emulator){
+ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size){
+    disk_emulator->disk = malloc(size);
     int i;
-    for(i=0; i<DISK_SIZE; i++){
+    for(i=0; i<size; i++){
         disk_emulator->disk[i] = 0;
     }
 }
 
-ErrorCode destroyDisk(){
-    
+ErrorCode destroyDisk(DiskEmulator *disk_emulator){
+    free(disk_emulator->disk);
 }
 
 ErrorCode readBlock(DiskEmulator *disk_emulator, int block_num, void* out_buffer){

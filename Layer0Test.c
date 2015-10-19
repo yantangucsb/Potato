@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]){
    DiskEmulator diskEmulator;
-   initDisk(&diskEmulator);
+   initDisk(&diskEmulator, 256*16);
 
    char data[BLOCK_SIZE];
    int i;
@@ -25,5 +25,6 @@ int main(int argc, char *argv[]){
        printf("%d ", (int)ch);
    }
    printf("\n");
+   destroyDisk(&diskEmulator);
    return 0;
 }
