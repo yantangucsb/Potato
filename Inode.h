@@ -8,12 +8,12 @@
 
 typedef enum {
     Regular = 0,
-    Directory = 1,
-    CharactorDeviceFile = 2,
-    BlockDeviceFile = 3,
-    LocalSocketFile = 4,
-    Pipes = 5,
-    SymbolicLink = 6
+    Directory = 1//,
+//    CharactorDeviceFile = 2,
+//    BlockDeviceFile = 3,
+//    LocalSocketFile = 4,
+//    Pipes = 5,
+//    SymbolicLink = 6
 } FileType;
 
 typedef struct Inode{

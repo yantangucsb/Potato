@@ -3,6 +3,9 @@
  * BY Yan
  */
 
+#include "Parameters.h"
+#include "Inode.h"
+
 typedef struct FileSystem{
     SuperBlock super_block;
 

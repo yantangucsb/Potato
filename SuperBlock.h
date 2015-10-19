@@ -24,19 +24,19 @@ typedef struct{
     */
 
     //addr for head of the data block free list
-    addr_type dataBlockFreeListHead;
+    addr_type pdataBlockFreeListHead;
 
     //addr for tail of the data block free list
-    addr_type dataBlockFreeListTail;
+    addr_type pdataBlockFreeListTail;
 
-    //the size of inode list
+    //the size of inode list in terms of bytes
     size_type inodeListSize;
 
     //the number of free inodes in the file system
     size_type numOfFreeInodes;
     
     //a list of free inodes
-    addr_type freeInodeList[INODE_NUM];
+    addr_type freeInodeList[FREE_INODE_NUM];
 
     //the index of the next free inode in the free inode list
     size_type freeInodeIndex;
@@ -48,4 +48,4 @@ typedef struct{
     bool modified;
 } SuperBlock;
 
-void initSuperBlock();
+ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_block);

@@ -6,12 +6,12 @@
 #include "Parameters.h"
 
 typedef struct{
-    char disk[DISK_SIZE];
+    BYTE* disk;
 } DiskEmulator; 
 
-ErrorCode initDisk(DiskEmulator *disk_emulator);
+ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size);
 
-ErrorCode destroyDisk();
+ErrorCode destroyDisk(DiskEmulator *);
 
 ErrorCode readBlock(DiskEmulator *disk_emulator, int block_num, void* out_buffer);
 
