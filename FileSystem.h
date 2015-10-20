@@ -20,3 +20,4 @@ typedef struct FileSystem{
 
 ErrorCode initFS(size_type size, size_type percen, FileSystem* fs);
 
+ErrorCode readSuperBlock(DiskEmulator* disk_emulator, SuperBlock* super_block);

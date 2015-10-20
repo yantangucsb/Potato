@@ -3,6 +3,7 @@
  * By Yan
  */
 
+#include "string.h"
 #include "FileSystem.h"
 
 /*
@@ -48,4 +49,10 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     return Success;
 }
 
+ErrorCode readSuperBlock(DiskEmulator* disk_emulator, SuperBlock* super_block){
+    BYTE* buffer = malloc(BLOCK_SIZE);
+    readBlock(disk_emulator, SUPER_BLOCK_OFFSET, buffer);
+    super_block = (SuperBlock*) buffer;
 
+    return Success;
+}

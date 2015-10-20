@@ -11,7 +11,7 @@ typedef struct Inode{
     bool used;
 
     //File owner identifer: individual owner
-    char* fileOwner[FILE_OWNER_LENGTH];
+    char fileOwner[FILE_OWNER_LENGTH];
 
     //File owner identifer: group
     char OwnerGroup[FILE_OWNER_LENGTH];

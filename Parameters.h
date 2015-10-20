@@ -27,7 +27,7 @@ typedef enum {
 } FileType;
 
 
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 512
 
 //Super block parameters
 #define FREE_INODE_NUM 10
@@ -36,6 +36,6 @@ typedef enum {
 //free list parameters
 #define FREE_BLOCK_ARRAY_SIZE BLOCK_SIZE/sizeof(size_type)-1
 
-#define FILE_OWNER_LENGTH 50
+#define FILE_OWNER_LENGTH 14
 #define PERMISSION_CAT_NUM 3
 #define DIRECT_BLOCK_NUM 10

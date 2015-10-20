@@ -45,10 +45,4 @@ ErrorCode getFirstDataBlockNum(SuperBlock* super_block, size_type* addr){
 }
 
 
-ErrorCode readSuperBlock(DiskEmulator* disk_emulator, SuperBlock* super_block){
-    BYTE* buffer = malloc(BLOCK_SIZE);
-    readBlock(disk_emulator, SUPER_BLOCK_OFFSET, buffer);
-    super_block = (SuperBlock*) buffer;
 
-    return Success;
-}

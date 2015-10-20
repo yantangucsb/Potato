@@ -1,5 +1,7 @@
 /*
  * This is the inmemory buffer interface for Layer 0
+ * NOTICE: Please do not call any interface from this file in any file other than FileSystem.*
+ *          for sakes of changing interfaces in Layer2
  * By Yan
  */
 

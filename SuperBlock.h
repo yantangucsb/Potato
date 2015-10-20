@@ -50,6 +50,4 @@ typedef struct{
 
 ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_block);
 
-ErrorCode readSuperBlock(DiskEmulator* disk_emulator, SuperBlock* super_block);
-
 ErrorCode getFirstDataBlockNum(SuperBlock* super_block, size_type* addr);
