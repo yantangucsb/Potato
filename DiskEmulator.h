@@ -15,8 +15,8 @@ ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size);
 
 ErrorCode destroyDisk(DiskEmulator *);
 
-ErrorCode readBlock(DiskEmulator *disk_emulator, int block_num, void* out_buffer);
+ErrorCode readBlock(DiskEmulator *disk_emulator, size_type block_num, void* out_buffer);
 
-ErrorCode writeBlock(DiskEmulator *disk_emulator, int block_num, void *in_buffer);
+ErrorCode writeBlock(DiskEmulator *disk_emulator, size_type block_num, void *in_buffer);
 
-void printDisk(DiskEmulator *disk_emulator, int block_num);
+void printDisk(DiskEmulator *disk_emulator, size_type block_num);

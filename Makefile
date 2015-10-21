@@ -7,7 +7,7 @@ OBJS=DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o
 FUSEFLAGS=`pkg-config fuse --cflags --libs`
 SRCS=DiskEmulator.c
 
-all: test
+all: init test
 
 init: $(OBJS) InitFSTest
 

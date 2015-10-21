@@ -7,22 +7,35 @@
 #include "FileSystem.h"
 
 /*
- *size -- System size
- *percen -- percentage of inode space on disk, e.g. 10 means 10%
- *fs -- in memory buffer for files ystem 
+ * put and get need to be modified at Layer 2
+ * By Yan
  */
+ErrorCode put(FileSystem *fs, size_type block_no, void* buffer){
+    writeBlock(&(fs->disk_emulator), block_no, buffer);
+
+    return Success;
+}
+
+ErrorCode get(FileSystem *fs, size_type block_no, void* buffer){
+    readBlock(&(fs->disk_emulator), block_no, buffer);
+    
+    return Success;
+}
+
 ErrorCode setDataBlockFreeList(FileSystem* fs){
     //get the block number for data block 0
     size_type first_data_block;
     getFirstDataBlockNum(&(fs->super_block), &first_data_block);
 
+//    printf("%lu\n", fs->super_block.numOfFreeBlocks);
     //put free list onto disk
-    int i;
+    size_type i;
     for(i=0; i<fs->super_block.numOfFreeBlocks; ){
 
         FreeListNode list_node;
         initFreeListNode(&list_node, i);
-        writeBlock(&(fs->disk_emulator), i+first_data_block, &list_node);
+        put(fs, i+first_data_block, &list_node);
+//        printf("%lu\n", i);
         i += FREE_BLOCK_ARRAY_SIZE+1;
     }
 
@@ -33,15 +46,20 @@ ErrorCode setDataBlockFreeList(FileSystem* fs){
     return Success;
 }
 
+/*
+ *size -- System size
+ *percen -- percentage of inode space on disk, e.g. 10 means 10%
+ *fs -- in memory buffer for files ystem 
+ */
 ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     //test precondition
     
     //set up super block
     initSuperBlock(size, percen, &(fs->super_block));
-   
+  
     initDisk(&(fs->disk_emulator), fs->super_block.systemSize);
     //put everything on disk
-    writeBlock(&(fs->disk_emulator), SUPER_BLOCK_OFFSET, &(fs->super_block));
+    put(fs, SUPER_BLOCK_OFFSET, &(fs->super_block));
 
     //set up free list for data block
     setDataBlockFreeList(fs);
@@ -49,9 +67,9 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     return Success;
 }
 
-ErrorCode readSuperBlock(DiskEmulator* disk_emulator, SuperBlock* super_block){
+ErrorCode readSuperBlock(FileSystem* fs, SuperBlock* super_block){
     BYTE* buffer = malloc(BLOCK_SIZE);
-    readBlock(disk_emulator, SUPER_BLOCK_OFFSET, buffer);
+    get(fs, SUPER_BLOCK_OFFSET, buffer);
     super_block = (SuperBlock*) buffer;
 
     return Success;

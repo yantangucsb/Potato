@@ -38,19 +38,19 @@ ErrorCode destroyDisk(DiskEmulator *disk_emulator){
     return Success;
 }
 
-ErrorCode readBlock(DiskEmulator *disk_emulator, int block_num, void* out_buffer){
+ErrorCode readBlock(DiskEmulator *disk_emulator, size_type block_num, void* out_buffer){
     memcpy(out_buffer, &disk_emulator->disk[block_num*BLOCK_SIZE], BLOCK_SIZE);   
     return Success;
 }
 
-ErrorCode writeBlock(DiskEmulator *disk_emulator, int block_num, void *in_buffer){
+ErrorCode writeBlock(DiskEmulator *disk_emulator, size_type block_num, void *in_buffer){
     memcpy(&disk_emulator->disk[block_num*BLOCK_SIZE], in_buffer, BLOCK_SIZE);
     return Success;
 }
 
-void printDisk(DiskEmulator *disk_emulator, int block_num){
-    int i=block_num*BLOCK_SIZE;
-    int j;
+void printDisk(DiskEmulator *disk_emulator, size_type block_num){
+    size_type i=block_num*BLOCK_SIZE;
+    size_type j;
     for(j=0; j<BLOCK_SIZE; j++){
         char ch = disk_emulator->disk[j+i];
         printf("%d ", (int)ch);
