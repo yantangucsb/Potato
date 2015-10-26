@@ -8,6 +8,7 @@
 
 /*
  * put and get need to be modified at Layer 2
+ * can be called by others to read or write blocks
  * By Yan
  */
 ErrorCode put(FileSystem *fs, size_type block_no, void* buffer){
@@ -58,7 +59,8 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     initSuperBlock(size, percen, &(fs->super_block));
   
     initDisk(&(fs->disk_emulator), fs->super_block.systemSize);
-    //put everything on disk
+    //put super block on disk
+    //what if the super block is larger than BLOCK_SIZE? Yan
     put(fs, SUPER_BLOCK_OFFSET, &(fs->super_block));
 
     //set up free list for data block
