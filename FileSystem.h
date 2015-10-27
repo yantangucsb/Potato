@@ -24,4 +24,6 @@ ErrorCode get(FileSystem* fs, size_type block_no, void* buffer);
 
 ErrorCode initFS(size_type size, size_type percen, FileSystem* fs);
 
-ErrorCode readSuperBlock(FileSystem* fs, SuperBlock* super_block);
+ErrorCode readSuperBlock(FileSystem* fs);
+
+void printFileSystem(FileSystem* fs);

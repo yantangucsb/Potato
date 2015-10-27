@@ -3,6 +3,7 @@
  * By Yan
  */
 
+#include <stdio.h>
 #include "SuperBlock.h"
 
 ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_block){
@@ -43,5 +44,20 @@ ErrorCode getFirstDataBlockNum(SuperBlock* super_block, size_type* addr){
     return Success;
 }
 
-
+void printSuperBlock(SuperBlock* super_block){
+    printf("-----Super block info-----\n");
+    printf("systemSize = %ld\n", super_block->systemSize);
+    printf("numOfFreeBlocks = %ld\n", super_block->numOfFreeBlocks);
+    printf("pDataFreeListHead = %ld\n", super_block->pDataFreeListHead);
+    printf("pDataFreeListTail = %ld\n", super_block->pDataFreeListTail);
+    printf("inodeListSize = %ld\n", super_block->inodeListSize);
+    printf("numOfFreeInodes = %ld\n", super_block->numOfFreeInodes);
+    printf("freeInodeList = \n");
+    int i;
+    for(i=0; i<FREE_INODE_NUM; i++){
+        printf("%ld ", super_block->freeInodeList[i]);
+    }
+    printf("\n");
+    printf("freeInodeIndex = %ld\n", super_block->freeInodeIndex);
+}
 

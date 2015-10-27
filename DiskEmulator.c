@@ -26,7 +26,7 @@
 
 ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size){
     disk_emulator->disk = malloc(size);
-    int i;
+    size_type i;
     for(i=0; i<size; i++){
         disk_emulator->disk[i] = 0;
     }
