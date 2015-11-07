@@ -20,8 +20,6 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 	
 	SuperBlock* super = &(fs->super_block);
 	
-	
-	size_type numOfInodes = (BLOCK_SIZE/sizeof(Inode)) * ((size_type)(super->systemSize*0.01*PERCENT)/BLOCK_SIZE);
 	if (super->numOfFreeInodes > 0){//there are free inodes in the free inodes list cache
 		//assign free inode Id
 		*inodeId = super->freeInodeList[super->freeInodeIndex];
@@ -30,39 +28,47 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 		//freeInodeList[super->freeInodeIndex]=-1 means this item is used
 		super->freeInodeList[super->freeInodeIndex]=-1;
 		super->numOfFreeInodes--;
-		super->freeInodeIndex = (super->freeInodeIndex+1)%numOfInodes;
+		super->freeInodeIndex--;
 		super->modified = true;
 		
 		PrintInfo(super, inodeId);
+		if (super->freeInodeIndex==-1){
+			printf("[Allocate Inode] Free Inodes List Is Empty #>.<#\n");
+		}
 		
-		ErrorCode err_getInode=getInode(fs, inodeId, inode);
+		
+		ErrorCode err_getInode=getInode(fs, inodeId, inode);//TESTED
+		
 		if (err_getInode==Success){
+			printf("[Allocate Inode] Get Inode Successful!\n");
 			ErrorCode err_InitInode=InitInode(inode);
 			if (err_InitInode==Success){
+				printf("[Allocate Inode] Initialize Inode Successful!\n");
 				ErrorCode err_putInode=putInode(fs, inodeId, inode);
 				if (err_putInode==Success){
-					printf("Allocate Inode Successful!\n");
+					printf("[Allocate Inode] Allocate Inode Successful!\n");
 					return Success;						
 				}
 				else{
-					printf("Failure to Put Inode\n");
+					printf("[Allocate Inode] Failure to Put Inode\n");
 					return err_putInode;
 				}						
 			}
 			else{
-				printf("Failure to Initialize Inode\n");
+				printf("[Allocate Inode] Failure to Initialize Inode\n");
 				return err_InitInode;
 			}
 		}
 		else{
-			printf("Falied to Get Inode\n");
+			printf("[Allocate Inode] Falied to Get Inode\n");
 			return err_getInode;
 		}
 	}
 	else{//there are no free inodes in the free inodes list cashe, need to garbage collection of the free inodes list cache
 		//before garbage collection, we need to shift super->freeInodeIndex to the right index
-		super->freeInodeIndex = 0;
+		
 		ErrorCode err_garbcollectInode = garbcollectInode(fs);
+		super->freeInodeIndex = super->numOfFreeInodes > FREE_INODE_NUM? FREE_INODE_NUM - 1: super->numOfFreeInodes;
 		if (err_garbcollectInode==Success){
 			
 			//assign free inode Id
@@ -72,37 +78,39 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 			//freeInodeList[super->freeInodeIndex]=-1 means this item is used
 			super->freeInodeList[super->freeInodeIndex]=-1;
 			super->numOfFreeInodes--;
-			super->freeInodeIndex = (super->freeInodeIndex+1)%numOfInodes;
+			super->freeInodeIndex--;
 			super->modified = true;
 			
 			PrintInfo(super, inodeId);
 			
 			ErrorCode err_getInode=getInode(fs, inodeId, inode);
 			if (err_getInode==Success){
+				printf("[Allocate Inode] Get Inode Successful!\n");
 				ErrorCode err_InitInode=InitInode(inode);
 				if (err_InitInode==Success){
+					printf("[Allocate Inode] Initialize Inode Successful!\n");
 					ErrorCode err_putInode=putInode(fs, inodeId, inode);
 					if (err_putInode==Success){
-						printf("Allocate Inode Successful!\n");
+						printf("[Allocate Inode] Allocate Inode Successful!\n");
 						return Success;						
 					}
 					else{
-						printf("Failure to Put Inode\n");
+						printf("[Allocate Inode] Failure to Put Inode\n");
 						return err_putInode;
 					}						
 				}
 				else{
-					printf("Failure to Initialize Inode\n");
+					printf("[Allocate Inode] Failure to Initialize Inode\n");
 					return err_InitInode;
 				}
 			}
 			else{
-				printf("Falied to Get Inode\n");
+				printf("[Allocate Inode] Falied to Get Inode\n");
 				return err_getInode;
 			}
 		}
 		else{
-			printf("After Garbage Collection, Failed to Allocate New Inode\n");
+			printf("[Allocate Inode] After Garbage Collection, Failed to Allocate New Inode\n");
 			return err_garbcollectInode;
 		}
 	}
@@ -141,6 +149,11 @@ ErrorCode garbcollectInode(FileSystem* fs){
 					//freed inode on disk have been found
 					freed_inode_in_block = true;
 					inodeId = block_no*num_of_inodes_per_block+i;
+					if (inodeId > FREE_INODE_NUM-1){
+						printf("[Garbage Collection] All inodes on disk are allocated :(\n");
+						return Err_InodeFull;
+					}
+						
 					
 					//update super block
 					super->freeInodeList[insertInodeIndex]=inodeId;					
@@ -236,35 +249,34 @@ ErrorCode InitInode(Inode* inode){
 	inode->otherPermission[0]=false;
 	inode->otherPermission[1]=false;
 	inode->otherPermission[2]=true;
-	
+
 	//time initialization
 	time_t current_time;
 	char* c_time_string;
 	current_time = time(NULL);
 	if (current_time == ((time_t)-1)){
-		printf("Failure to compute the current time.\n");
+		printf("[Initialize Inode] Failure to compute the current time.\n");
 		return Err_InitInode;
 	}
 	c_time_string = ctime(&current_time);
     if (c_time_string == NULL)
     {
-        printf("Failure to convert the current time.\n");
+        printf("[Initialize Inode] Failure to convert the current time.\n");
         return Err_InitInode;
     }
     
-    strcpy (&(inode->fileModifiedTime), c_time_string);
-    strcpy (&(inode->fileAccessTime), c_time_string);
-    strcpy (&(inode->inodeModifiedTime), c_time_string);
-	
+    strcpy (inode->fileModifiedTime, c_time_string);
+    strcpy (inode->fileAccessTime, c_time_string);
+    strcpy (inode->inodeModifiedTime, c_time_string);
+    
 	inode->numOfLinks = 0;
 	
 	int i=0;
-	for (i=0;1<DIRECT_BLOCK_NUM;i++)
+	for (i=0;i<DIRECT_BLOCK_NUM;i++)
 		inode->directBlock[i]=0;
 	inode->singleBlock=0;
 	inode->doubleBlock=0;
 	inode->tripleBlock=0;
-	
 	return Success;
 }
 
