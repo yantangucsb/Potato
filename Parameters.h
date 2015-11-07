@@ -49,3 +49,5 @@ typedef enum {
 #define FILE_OWNER_LENGTH 14
 #define PERMISSION_CAT_NUM 3
 #define DIRECT_BLOCK_NUM 10
+
+#define PERCENT 20

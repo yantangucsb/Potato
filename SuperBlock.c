@@ -1,10 +1,6 @@
 /*
  * set up super block
  * By Yan
- * Modified by Peng
- * +change the initialized value of super_block->freeInodeIndex
- * +change the initialized value of super_block->freeInodeList[i]
- * +super_block->numOfInodes
  */
 
 #include <stdio.h>
@@ -29,18 +25,11 @@ ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_blo
     size_type num_of_free_inodes = num_of_inodes_per_block * num_of_inode_blocks;
     super_block->numOfFreeInodes = num_of_free_inodes;
     
-    //set num of inodes
-    super_block->numOfInodes = num_of_free_inodes;
-    
-    //set next freed inode insert position
-    super_block->insertInodeIndex = 0;
-    
     //initialize the free inode list cache
-    //super_block->freeInodeIndex = num_of_free_inodes > FREE_INODE_NUM? FREE_INODE_NUM - 1: num_of_free_inodes;
-    super_block->freeInodeIndex = 0;
-    int i = num_of_free_inodes - 1;
+    super_block->freeInodeIndex = num_of_free_inodes > FREE_INODE_NUM? FREE_INODE_NUM - 1: num_of_free_inodes;
+    int i = super_block->freeInodeIndex;
     for(; i>=0; i--){
-        super_block->freeInodeList[i] = i;
+        super_block->freeInodeList[i] = super_block->freeInodeIndex-i;
     }
 
     super_block->modified = 0;

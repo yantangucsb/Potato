@@ -1,8 +1,6 @@
 /*
  * This is Inode
  * By Yan
- * Modified by Peng
- * +type of time
  */
 
 #include <stdbool.h>
@@ -10,8 +8,7 @@
 
 typedef struct Inode{
     //Reserve the space for the flag of used
-    //used=true, unused=false
-    bool used ;
+    bool used;
 
     //File owner identifer: individual owner
     char fileOwner[FILE_OWNER_LENGTH];
@@ -32,9 +29,9 @@ typedef struct Inode{
 
     //File access times: the time the file was last modified, when it was last accessed
     //and when the inode was last modified
-    char fileModifiedTime[32];
-    char fileAccessTime[32];
-    char inodeModifiedTime[32];
+    size_type fileModifiedTime;
+    size_type fileAccessTime;
+    size_type inodeModifiedTime;
 
     //Number of links to the file: The number of names the file has in the directory hierarchy
     size_type numOfLinks;

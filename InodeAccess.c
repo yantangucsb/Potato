@@ -19,6 +19,9 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 	//If falied, inodeId and inode will point to nowhere
 	
 	SuperBlock* super = &(fs->super_block);
+	
+	
+	size_type numOfInodes = (BLOCK_SIZE/sizeof(Inode)) * ((size_type)(super->systemSize*0.01*PERCENT)/BLOCK_SIZE);
 	if (super->numOfFreeInodes > 0){//there are free inodes in the free inodes list cache
 		//assign free inode Id
 		*inodeId = super->freeInodeList[super->freeInodeIndex];
@@ -27,7 +30,7 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 		//freeInodeList[super->freeInodeIndex]=-1 means this item is used
 		super->freeInodeList[super->freeInodeIndex]=-1;
 		super->numOfFreeInodes--;
-		super->freeInodeIndex = (super->freeInodeIndex+1)%super->numOfInodes;
+		super->freeInodeIndex = (super->freeInodeIndex+1)%numOfInodes;
 		super->modified = true;
 		
 		PrintInfo(super, inodeId);
@@ -58,7 +61,7 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 	}
 	else{//there are no free inodes in the free inodes list cashe, need to garbage collection of the free inodes list cache
 		//before garbage collection, we need to shift super->freeInodeIndex to the right index
-		super->freeInodeIndex = super->insertInodeIndex;
+		super->freeInodeIndex = 0;
 		ErrorCode err_garbcollectInode = garbcollectInode(fs);
 		if (err_garbcollectInode==Success){
 			
@@ -69,7 +72,7 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 			//freeInodeList[super->freeInodeIndex]=-1 means this item is used
 			super->freeInodeList[super->freeInodeIndex]=-1;
 			super->numOfFreeInodes--;
-			super->freeInodeIndex = (super->freeInodeIndex+1)%super->numOfInodes;
+			super->freeInodeIndex = (super->freeInodeIndex+1)%numOfInodes;
 			super->modified = true;
 			
 			PrintInfo(super, inodeId);
@@ -117,6 +120,7 @@ ErrorCode garbcollectInode(FileSystem* fs){
 	size_type num_of_inodes_per_block = BLOCK_SIZE/sizeof(Inode);
 	size_type num_of_inode_blocks = super->inodeListSize/BLOCK_SIZE;
 	size_type block_no=0;
+	size_type insertInodeIndex = 0;
 	size_type inodeId;
 	
 	//read block from disk
@@ -139,9 +143,9 @@ ErrorCode garbcollectInode(FileSystem* fs){
 					inodeId = block_no*num_of_inodes_per_block+i;
 					
 					//update super block
-					super->freeInodeList[super->insertInodeIndex]=inodeId;					
+					super->freeInodeList[insertInodeIndex]=inodeId;					
 					super->numOfFreeInodes++;
-					super->insertInodeIndex = (super->insertInodeIndex+1)%super->numOfInodes;
+					insertInodeIndex++;
 					super->modified = true;
 					
 					printf("[Garbage Collection] Inode %ld in Block %ld has been added to free list cache\n",inodeId,block_no);
@@ -247,9 +251,10 @@ ErrorCode InitInode(Inode* inode){
         printf("Failure to convert the current time.\n");
         return Err_InitInode;
     }
-    strcpy (inode->fileModifiedTime, c_time_string);
-    strcpy (inode->fileAccessTime, c_time_string);
-    strcpy (inode->inodeModifiedTime, c_time_string);
+    
+    strcpy (&(inode->fileModifiedTime), c_time_string);
+    strcpy (&(inode->fileAccessTime), c_time_string);
+    strcpy (&(inode->inodeModifiedTime), c_time_string);
 	
 	inode->numOfLinks = 0;
 	
