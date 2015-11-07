@@ -12,6 +12,17 @@
 
 #include "InodeAccess.h"
 
+size_type getFreeListNum (SuperBlock* super) {
+	int i;
+	size_type FreeInodesNum=0;
+	for (i=0;i<FREE_INODE_NUM;i++){
+		if(super->freeInodeList[i]!=-1){
+			FreeInodesNum++;
+		}
+	}
+	return FreeInodesNum;
+}
+
 ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 	//Input is FileSystem* fs
 	//WARNING: the caller should define an Inode and use the pointer of that Inode as input to this function
@@ -20,7 +31,7 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 	
 	SuperBlock* super = &(fs->super_block);
 	
-	if (super->numOfFreeInodes > 0){//there are free inodes in the free inodes list cache
+	if (getFreeListNum(super) > 0){//there are free inodes in the free inodes list cache
 		//assign free inode Id
 		*inodeId = super->freeInodeList[super->freeInodeIndex];
 		
@@ -37,7 +48,7 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 		}
 		
 		
-		ErrorCode err_getInode=getInode(fs, inodeId, inode);//TESTED
+		ErrorCode err_getInode=getInode(fs, inodeId, inode);
 		
 		if (err_getInode==Success){
 			printf("[Allocate Inode] Get Inode Successful!\n");
@@ -68,7 +79,7 @@ ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode) {
 		//before garbage collection, we need to shift super->freeInodeIndex to the right index
 		
 		ErrorCode err_garbcollectInode = garbcollectInode(fs);
-		super->freeInodeIndex = super->numOfFreeInodes > FREE_INODE_NUM? FREE_INODE_NUM - 1: super->numOfFreeInodes;
+		super->freeInodeIndex = FREE_INODE_NUM - 1;
 		if (err_garbcollectInode==Success){
 			
 			//assign free inode Id
@@ -128,7 +139,7 @@ ErrorCode garbcollectInode(FileSystem* fs){
 	size_type num_of_inodes_per_block = BLOCK_SIZE/sizeof(Inode);
 	size_type num_of_inode_blocks = super->inodeListSize/BLOCK_SIZE;
 	size_type block_no=0;
-	size_type insertInodeIndex = 0;
+	size_type insertInodeIndex = FREE_INODE_NUM - 1;//Assume FREE_INODE_NUM is small
 	size_type inodeId;
 	
 	//read block from disk
@@ -136,6 +147,7 @@ ErrorCode garbcollectInode(FileSystem* fs){
 	data_block_buffer = (void *) malloc (BLOCK_SIZE);
 	Inode *temp_inode = data_block_buffer;//pointer to buffer
 	bool freed_inode_in_block;//whether there are freed inodes found in blocks
+	bool finish = false;
 	
 	for (;block_no<num_of_inode_blocks;block_no++){
 		freed_inode_in_block = false;
@@ -145,23 +157,24 @@ ErrorCode garbcollectInode(FileSystem* fs){
 		if (err==Success){
 			int i=0;
 			for (;i<num_of_inodes_per_block;i++){
+				inodeId = block_no*num_of_inodes_per_block+i;
+				if (getFreeListNum(super) == FREE_INODE_NUM){
+					printf("[Garbage Collection] Garbage Collection Search Done :)\n");
+					finish = true;
+					break;
+				}				
 				if (temp_inode[i].used==false){
 					//freed inode on disk have been found
 					freed_inode_in_block = true;
-					inodeId = block_no*num_of_inodes_per_block+i;
-					if (inodeId > FREE_INODE_NUM-1){
-						printf("[Garbage Collection] All inodes on disk are allocated :(\n");
-						return Err_InodeFull;
-					}
-						
-					
+										
 					//update super block
-					super->freeInodeList[insertInodeIndex]=inodeId;					
+					super->freeInodeList[insertInodeIndex]=inodeId;
 					super->numOfFreeInodes++;
-					insertInodeIndex++;
+					insertInodeIndex--;
 					super->modified = true;
 					
 					printf("[Garbage Collection] Inode %ld in Block %ld has been added to free list cache\n",inodeId,block_no);
+					printf("[Garbage Collection] Number of Free Inodes: %ld\n",super->numOfFreeInodes);
 				}
 				else
 					continue;
@@ -183,10 +196,13 @@ ErrorCode garbcollectInode(FileSystem* fs){
 				return Err_PutBlock;
 			}
 		}
+		if (finish==true)
+				break;
 	}
+	
 	free(data_block_buffer);
 	if (super->numOfFreeInodes > 0){
-		printf("[Garbage Collection] %ld blocks have been garbage collected :)\n",super->numOfFreeInodes);
+		printf("[Garbage Collection] %ld blocks have been garbage collected :)\n",getFreeListNum(super));
 		return Success;
 	}
 	else{
@@ -204,6 +220,11 @@ ErrorCode freeInode(FileSystem* fs, size_type* inodeId) {
 	//If successful, Inode* inode will be freed on disk
 	
 	SuperBlock* super = &(fs->super_block);
+	
+	if (*inodeId<0 || *inodeId>=super->numOfFreeInodes){
+		printf("[Free Inode] Inode %ld is not in the legal range :(\n",*inodeId);
+		return OutOfBound;
+	}
 	
 	Inode inode;
 	ErrorCode err_getInode=getInode(fs, inodeId, &inode);
@@ -277,6 +298,7 @@ ErrorCode InitInode(Inode* inode){
 	inode->singleBlock=0;
 	inode->doubleBlock=0;
 	inode->tripleBlock=0;
+	printf("[Initialize Inode] Initialize Inode Successful :)\n");
 	return Success;
 }
 

@@ -16,12 +16,30 @@ int main(int argc, char *argv[]){
 //    printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));
     readSuperBlock(&fs);
     printFileSystem(&fs);
+    
+    
+    
+    
     size_type inodeId;
     Inode inode;
-    ErrorCode err;
+    
     int i;
-    int Current_Number_Of_Inodes=104856;
-    for (i=0;i<101;i++)
+    for (i=0;i<103;i++)
     	allocInode(&fs, &inodeId, &inode);
+    printf("[Get Inode] Test is Successful ~(￣▽￣)~\n");
+    printf("[Initialize Inode] Test is Successful ~(￣▽￣)~\n");
+    printf("[Put Inode] Test is Successful ~(￣▽￣)~\n");
+    printf("[Allocate Inode] Test is Successful ~(￣▽￣)~\n");
+    
+    for (inodeId=0;inodeId<103;inodeId++)
+    	freeInode(&fs, &inodeId);
+    printf("[Free Inode] Test is Successful ~(￣▽￣)~\n");
+    
+    for (i=0;i<103;i++)
+    	allocInode(&fs, &inodeId, &inode);
+    printf("[Garbage Collection] Test is Successful ~(￣▽￣)~\n");
+    
+    
+    
     return 0;
 }

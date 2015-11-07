@@ -10,4 +10,5 @@ ErrorCode freeInode(FileSystem* fs, size_type* inodeId);
 ErrorCode InitInode(Inode* inode);
 ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode);
 ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode);
+size_type getFreeListNum (SuperBlock* super);
 void PrintInfo(SuperBlock* super, size_type* inodeId);

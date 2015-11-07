@@ -40,7 +40,7 @@ typedef enum {
 #define BLOCK_SIZE 512
 
 //Super block parameters
-#define FREE_INODE_NUM 10
+#define FREE_INODE_NUM 100
 #define SUPER_BLOCK_OFFSET 0
 
 //free list parameters
@@ -51,3 +51,6 @@ typedef enum {
 #define DIRECT_BLOCK_NUM 10
 
 #define PERCENT 20
+
+//Inode Time
+#define TIME_LENGTH 32
