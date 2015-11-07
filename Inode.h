@@ -29,9 +29,9 @@ typedef struct Inode{
 
     //File access times: the time the file was last modified, when it was last accessed
     //and when the inode was last modified
-    size_type fileModifiedTime;
-    size_type fileAccessTime;
-    size_type inodeModifiedTime;
+    char fileModifiedTime[TIME_LENGTH];
+    char fileAccessTime[TIME_LENGTH];
+    char inodeModifiedTime[TIME_LENGTH];
 
     //Number of links to the file: The number of names the file has in the directory hierarchy
     size_type numOfLinks;

@@ -4,7 +4,7 @@
  */
 
 #include <stdio.h>
-#include "FileSystem.h"
+#include "InodeAccess.h"
 
 int main(int argc, char *argv[]){
     FileSystem fs;
@@ -16,5 +16,12 @@ int main(int argc, char *argv[]){
 //    printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));
     readSuperBlock(&fs);
     printFileSystem(&fs);
+    size_type inodeId;
+    Inode inode;
+    ErrorCode err;
+    int i;
+    int Current_Number_Of_Inodes=104856;
+    for (i=0;i<101;i++)
+    	allocInode(&fs, &inodeId, &inode);
     return 0;
 }
