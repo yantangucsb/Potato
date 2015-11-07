@@ -1,6 +1,8 @@
 /*
  * This is the superblock
  * By Yan
+ * Modified by Peng
+ * +numOfInodes,insertInodeIndex
  */
 
 #include <stdbool.h>
@@ -32,6 +34,9 @@ typedef struct{
     //the size of inode list in terms of bytes
     size_type inodeListSize;
 
+    //the number of inodes in the file system
+    size_type numOfInodes;
+    
     //the number of free inodes in the file system
     size_type numOfFreeInodes;
     
@@ -40,6 +45,9 @@ typedef struct{
 
     //the index of the next free inode in the free inode list
     size_type freeInodeIndex;
+    
+    //used by freeInode(), insert freed inode to free inode list using this index
+    size_type insertInodeIndex;    
 
     //lock fields for the free block and free inode lists
     

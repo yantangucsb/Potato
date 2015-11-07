@@ -1,5 +1,7 @@
 /*
  * Set any global parameters here
+ * Modified by Peng
+ * +FreeInodeListFull
  */
 
 #pragma once
@@ -13,7 +15,15 @@ typedef uint8_t BYTE;
 typedef enum {
     Success = 0,
     DiskFull = 1,
-    OutOfBound = 2
+    OutOfBound = 2,
+    FreeInodeListFull = 3,
+    Err_GetInode = 4,
+    Err_PutInode = 5,
+    Err_InitInode = 6,
+    Err_GarbCollectInode = 7,
+    Err_GetBlock = 8,
+    Err_PutBlock = 9,
+    Err_InodeFull = 10
 } ErrorCode;
 
 typedef enum {
