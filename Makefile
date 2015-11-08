@@ -3,7 +3,11 @@ CC=gcc
 LD=gcc
 
 CFLAGS=-O2 -std=gnu99 -g
-OBJS= InodeAccess.o DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o
+<<<<<<< HEAD
+OBJS=InodeAccess.o DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o
+=======
+OBJS=DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o InodeAccess.o
+>>>>>>> ac8c0650673271c4f6a484dd0d8f94be5b55cda0
 FUSEFLAGS=`pkg-config fuse --cflags --libs`
 SRCS=DiskEmulator.c
 
