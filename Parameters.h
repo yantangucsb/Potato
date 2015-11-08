@@ -37,7 +37,7 @@ typedef enum {
 } FileType;
 
 
-#define BLOCK_SIZE 512
+#define BLOCK_SIZE 1024
 
 //Super block parameters
 #define FREE_INODE_NUM 100
