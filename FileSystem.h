@@ -26,4 +26,6 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs);
 
 ErrorCode readSuperBlock(FileSystem* fs);
 
+ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset);
+
 void printFileSystem(FileSystem* fs);
