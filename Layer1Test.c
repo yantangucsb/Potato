@@ -66,5 +66,22 @@ int main(int argc, char *argv[]){
     printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
     printFreeListNode(&(fs.dataBlockFreeListTailBuf));
     
+    for(j = 104848; j>=0; j--){
+        size_type k;
+        if(allocBlock(&fs, &k) == NoFreeDataBlock)
+            printf("No free Blocks available.\n");
+    }
+
+    printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
+
+    for(j = 9; j>=0; j--){
+        freeBlock(&fs, &j);
+        printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    }
+        
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
     return 0;
 }
