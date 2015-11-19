@@ -48,6 +48,7 @@ typedef enum {
 #define FREE_BLOCK_ARRAY_SIZE BLOCK_SIZE/sizeof(size_type)-1
 
 #define FILE_OWNER_LENGTH 14
+#define FILE_NAME_LENGTH 14
 #define PERMISSION_CAT_NUM 3
 #define DIRECT_BLOCK_NUM 10
 
