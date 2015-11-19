@@ -12,8 +12,9 @@ int main(int argc, char *argv[]){
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
 //    printDisk(&(fs.disk_emulator), 0);
-//    printf("size of Inode: %lu\n", sizeof(Inode));
+    printf("size of Inode: %lu\n", sizeof(Inode));
     printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));
+    printFileSystem(&fs);
     readSuperBlock(&fs);
     printFileSystem(&fs);
 
@@ -31,7 +32,7 @@ int main(int argc, char *argv[]){
     printf("[Initialize Inode] Test is Successful ~(￣▽￣)~\n");
     printf("[Put Inode] Test is Successful ~(￣▽￣)~\n");
     printf("[Allocate Inode] Test is Successful ~(￣▽￣)~\n");
-    
+    printFileSystem(&fs);
     for (inodeId=0;inodeId<103;inodeId++)
     	freeInode(&fs, &inodeId);
     printf("[Free Inode] Test is Successful ~(￣▽￣)~\n");

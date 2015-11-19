@@ -39,11 +39,16 @@ ErrorCode destroyDisk(DiskEmulator *disk_emulator){
 }
 
 ErrorCode readBlock(DiskEmulator *disk_emulator, size_type block_num, void* out_buffer){
+//      sizeof(disk_emulator->disk) is the size of the pointer not the disk
+//    if(block_num*BLOCK_SIZE >= sizeof(disk_emulator->disk) || block_num < 0)
+//        return OutOfBound;
     memcpy(out_buffer, &disk_emulator->disk[block_num*BLOCK_SIZE], BLOCK_SIZE);   
     return Success;
 }
 
 ErrorCode writeBlock(DiskEmulator *disk_emulator, size_type block_num, void *in_buffer){
+//    if(block_num*BLOCK_SIZE >= sizeof(disk_emulator->disk) || block_num < 0)
+//        return OutOfBound;
     memcpy(&disk_emulator->disk[block_num*BLOCK_SIZE], in_buffer, BLOCK_SIZE);
     return Success;
 }

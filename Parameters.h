@@ -23,7 +23,8 @@ typedef enum {
     Err_GarbCollectInode = 7,
     Err_GetBlock = 8,
     Err_PutBlock = 9,
-    Err_InodeFull = 10
+    Err_InodeFull = 10,
+    NoFreeDataBlock = 11
 } ErrorCode;
 
 typedef enum {

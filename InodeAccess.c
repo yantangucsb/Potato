@@ -220,7 +220,9 @@ ErrorCode freeInode(FileSystem* fs, size_type* inodeId) {
 	//If successful, Inode* inode will be freed on disk
 	
 	SuperBlock* super = &(fs->super_block);
-	
+
+    //super->numOfFreeInodes records the current number of free inodes, it is a wrong use.
+    //Use fs->super_block.numOfInodes - By Yan
 	if (*inodeId<0 || *inodeId>=super->numOfFreeInodes){
 		printf("[Free Inode] Inode %ld is not in the legal range :(\n",*inodeId);
 		return OutOfBound;

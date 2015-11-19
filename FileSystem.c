@@ -13,49 +13,43 @@
  * By Yan
  */
 ErrorCode put(FileSystem *fs, size_type block_no, void* buffer){
-    writeBlock(&(fs->disk_emulator), block_no, buffer);
-
-    return Success;
+    if(block_no >= fs->super_block.systemSize/BLOCK_SIZE || block_no < 0)
+        return OutOfBound;
+    return writeBlock(&(fs->disk_emulator), block_no, buffer);
 }
 
 ErrorCode get(FileSystem *fs, size_type block_no, void* buffer){
-    readBlock(&(fs->disk_emulator), block_no, buffer);
-    
-    return Success;
+    if(block_no >= fs->super_block.systemSize/BLOCK_SIZE || block_no < 0)
+        return OutOfBound;
+    return readBlock(&(fs->disk_emulator), block_no, buffer);
 }
 
 ErrorCode setDataBlockFreeList(FileSystem* fs){
-    //get the block number for data block 0
-    size_type first_data_block;
-    getFirstDataBlockNum(&(fs->super_block), &first_data_block);
-
-//    printf("%lu\n", fs->super_block.numOfFreeBlocks);
+    //    printf("%lu\n", fs->super_block.numOfFreeBlocks);
     //put free list onto disk
     size_type i;
     for(i=0; i<fs->super_block.numOfFreeBlocks; ){
 
         FreeListNode list_node;
         initFreeListNode(&list_node, i);
-        put(fs, i+first_data_block, &list_node);
-//        printf("%ld\n", i);
+        if(list_node.next_node > fs->super_block.numOfFreeBlocks){
+            list_node.next_node = -1;
+        }
+//        if(i == 0)
+//            printFreeListNode(&list_node);
+        put(fs, i+fs->super_block.firstDataBlockId, &list_node);
+//        printf("%ld\n", i+fs->super_block.firstDataBlockId);
         if(i+FREE_BLOCK_ARRAY_SIZE+1 > fs->super_block.numOfFreeBlocks){
-            fs->super_block.pDataFreeListTail = i + first_data_block;
+            fs->super_block.pDataFreeListTail = i;
         }
         i += FREE_BLOCK_ARRAY_SIZE+1;
     }
 
     //save free list head/tail block no in super block
-    fs->super_block.pDataFreeListHead = first_data_block;
+    fs->super_block.pDataFreeListHead = 0;
     
     //    fs->super_block.pDataFreeListTail = i - FREE_BLOCK_ARRAY_SIZE -1 + first_data_block;
     //printf("tail no:%ld\n", fs->super_block.pDataFreeListTail);
-    return Success;
-}
-
-ErrorCode setFreeListBuf(FileSystem* fs){
-    get(fs, fs->super_block.pDataFreeListHead, &(fs->dataBlockFreeListHeadBuf));
-    get(fs, fs->super_block.pDataFreeListTail, &(fs->dataBlockFreeListTailBuf));
-
     return Success;
 }
 
@@ -69,17 +63,23 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     
     //set up super block
     initSuperBlock(size, percen, &(fs->super_block));
-  
+//    printSuperBlock(&(fs->super_block));  
     initDisk(&(fs->disk_emulator), fs->super_block.systemSize);
     //set up free list for data block
     setDataBlockFreeList(fs);
    
     //set up free list buf
-    setFreeListBuf(fs);
-    
+    get(fs, fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListHeadBuf));
+    //printDisk(&(fs->disk_emulator), fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
+//    printf("read head buf from: %ld\n", fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
+    get(fs, fs->super_block.pDataFreeListTail+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListTailBuf));
+
     //put super block on disk at the end of initialization
     //what if the super block is larger than BLOCK_SIZE? Yan
-    put(fs, SUPER_BLOCK_OFFSET, &(fs->super_block));
+    //Map superblock to superblockonDisk
+    SuperBlockonDisk super_block_on_disk;
+    mapSuperBlockonDisk(&(fs->super_block), &(super_block_on_disk));
+    put(fs, SUPER_BLOCK_OFFSET, &(super_block_on_disk));
     
     return Success;
 }
@@ -87,7 +87,7 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
 ErrorCode readSuperBlock(FileSystem* fs){
     BYTE* buffer = malloc(BLOCK_SIZE);
     get(fs, SUPER_BLOCK_OFFSET, buffer);
-    fs->super_block = *((SuperBlock*) buffer);
+    mapDisk2SuperBlockinMem((SuperBlockonDisk*) buffer, &(fs->super_block));
 
     return Success;
 }
