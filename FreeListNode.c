@@ -6,11 +6,22 @@
 #include <stdio.h>
 #include "FreeListNode.h"
 
-ErrorCode initFreeListNode(FreeListNode* list_node, size_type block_no){
-    list_node->next_node = block_no + FREE_BLOCK_ARRAY_SIZE + 1;
+ErrorCode initFreeListNode(FreeListNode* list_node, size_type block_no, size_type start){
+    if(start < block_no + FREE_BLOCK_ARRAY_SIZE)
+        list_node->next_node = -1;
+    else
+        list_node->next_node = block_no + FREE_BLOCK_ARRAY_SIZE + 1;
+    
     int i;
     for(i = 0; i<FREE_BLOCK_ARRAY_SIZE; i++){
-        list_node->free_block_arr[i] = i + block_no + 1;
+        if(start == block_no)
+            break;
+        list_node->free_block_arr[i] = start;
+        start--; 
+    }
+
+    for(; i<FREE_BLOCK_ARRAY_SIZE; i++){
+        list_node->free_block_arr[i] = -1;
     }
 
     return Success;

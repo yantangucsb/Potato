@@ -36,6 +36,7 @@ ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_blo
     
     //Extra fields 
     super_block->firstDataBlockId = num_of_inode_blocks+1;
+    super_block->numOfDataBlocks = super_block->numOfFreeBlocks;
     super_block->numOfInodes = num_of_free_inodes;
     return Success;
 }
@@ -76,7 +77,7 @@ ErrorCode mapDisk2SuperBlockinMem(SuperBlockonDisk* sb_on_disk, SuperBlock* supe
     super_block->firstDataBlockId = super_block->inodeListSize/BLOCK_SIZE+1;
     size_type num_of_inodes_per_block = BLOCK_SIZE/sizeof(Inode);
     super_block->numOfInodes = num_of_inodes_per_block*(super_block->inodeListSize/BLOCK_SIZE);
-
+    super_block->numOfDataBlocks  = (super_block->systemSize- BLOCK_SIZE - super_block->inodeListSize)/BLOCK_SIZE;
 }
 
 /*

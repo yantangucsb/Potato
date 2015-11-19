@@ -11,7 +11,7 @@ typedef struct {
 } FreeListNode;
 
 //only called once when setting up the system
-ErrorCode initFreeListNode(FreeListNode* list_node, size_type block_no);
+ErrorCode initFreeListNode(FreeListNode* list_node, size_type block_no, size_type start);
 
 ErrorCode initEmptyNode(FreeListNode* list_node);
 

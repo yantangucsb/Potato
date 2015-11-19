@@ -56,6 +56,7 @@ typedef struct{
     size_type numOfFreeBlocks;
     //used to put blocks to disk
     size_type firstDataBlockId;
+    size_type numOfDataBlocks;
     size_type pDataFreeListHead;
     size_type pDataFreeListTail;
     size_type numOfInodes;

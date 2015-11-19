@@ -3,7 +3,7 @@ CC=gcc
 LD=gcc
 
 CFLAGS=-O2 -std=gnu99 -g
-OBJS=InodeAccess.o DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o
+OBJS=DataBlockAccess.o InodeAccess.o DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o
 USEFLAGS=`pkg-config fuse --cflags --libs`
 SRCS=DiskEmulator.c
 
@@ -11,7 +11,10 @@ all: init test
 
 init: $(OBJS) InitFSTest
 
-test: $(OBJS) Layer0Test
+test: $(OBJS) Layer0Test Layer1Test
+
+Layer1Test: $(OBJS) Layer1Test.o
+	$(CC) $(CFLAGS) -o $@ $^
 
 InitFSTest: $(OBJS) InitFSTest.o
 	$(CC) $(CFLAGS) -o $@ $^

@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "InodeAccess.h"
+#include "DataBlockAccess.h"
 
 int main(int argc, char *argv[]){
     FileSystem fs;
@@ -12,14 +13,14 @@ int main(int argc, char *argv[]){
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
 //    printDisk(&(fs.disk_emulator), 0);
-//    printf("size of Inode: %lu\n", sizeof(Inode));
-//    printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));
-    readSuperBlock(&fs);
-    printFileSystem(&fs);
+    printf("size of Inode: %lu\n", sizeof(Inode));
+    printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));
+//    readSuperBlock(&fs);
+//    printFileSystem(&fs);
     
     
     
-    
+/*    
     size_type inodeId;
     Inode inode;
     
@@ -39,7 +40,31 @@ int main(int argc, char *argv[]){
     	allocInode(&fs, &inodeId, &inode);
     printf("[Garbage Collection] Test is Successful ~(￣▽￣)~\n");
     
+  */
+    size_type j;
+    for (j=0; j<129; j++){
+        allocBlock(&fs, &j);
+        printf("Alloc data block %ld successfully.\n", j);
+        printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    }
+
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
     
+    for (j=128; j>=0; j--)
+        freeBlock(&fs, &j);
+
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
+    
+    for (j=0; j<10; j++){
+        size_type k;
+        allocBlock(&fs, &k);
+        printf("Alloc data block %ld successfully.\n", k);
+        printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    }
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
     
     return 0;
 }

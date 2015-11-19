@@ -31,11 +31,14 @@ ErrorCode setDataBlockFreeList(FileSystem* fs){
     for(i=0; i<fs->super_block.numOfFreeBlocks; ){
 
         FreeListNode list_node;
-        initFreeListNode(&list_node, i);
-        if(list_node.next_node > fs->super_block.numOfFreeBlocks){
-            list_node.next_node = -1;
+        if(i+FREE_BLOCK_ARRAY_SIZE > fs->super_block.numOfFreeBlocks-1){
+            initFreeListNode(&list_node, i, fs->super_block.numOfFreeBlocks-1);
+        }else{
+            initFreeListNode(&list_node, i, i+FREE_BLOCK_ARRAY_SIZE);
         }
-//        if(i == 0)
+        
+
+        //        if(i == 0)
 //            printFreeListNode(&list_node);
         put(fs, i+fs->super_block.firstDataBlockId, &list_node);
 //        printf("%ld\n", i+fs->super_block.firstDataBlockId);

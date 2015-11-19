@@ -2,7 +2,7 @@
  * Interface of FileSystem
  * BY Yan
  */
-
+#pragma once
 #include "SuperBlock.h"
 #include "FreeListNode.h"
 #include "DiskEmulator.h"
