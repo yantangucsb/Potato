@@ -11,6 +11,7 @@
 typedef long size_type;
 typedef uint32_t addr_type;
 typedef uint8_t BYTE;
+typedef int32_t INT;
 
 typedef enum {
     Success = 0,

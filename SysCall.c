@@ -1,4 +1,7 @@
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include "SysCall.h"
 
 ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
     size_type curSize = DIRECT_BLOCK_NUM*BLOCK_SIZE;
@@ -69,7 +72,7 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
 
     //check if it is open
     OpenFileEntry* entry;
-    getOpenFileEntry(fs->open_file_table, path_name, entry);
+    getOpenFileEntry(&(fs->open_file_table), path_name, entry);
     if(entry != NULL){
         *inode_id = entry->inodeEntry->id;
         return Success;
@@ -99,7 +102,7 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
         DirEntry* dir_entry = (DirEntry*) buf;
         bool foundEntry = false;
         while(dir_entry != NULL){
-            if(strcmp(dir_entry->key, tok) == 0 && dir_entry->inodeId != -1){
+            if(strcmp(dir_entry->key, token) == 0 && dir_entry->inodeId != -1){
                 *inode_id = dir_entry->inodeId;
                 foundEntry = true;
                 break;
@@ -114,4 +117,10 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
         token = strtok(NULL, "/");
     }
     return Success;
+}
+
+INT open(char* path_name, FileOp flag, mode_t modes) {
+    size_type inode_id;
+    
+    return 0;
 }

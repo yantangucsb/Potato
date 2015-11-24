@@ -20,16 +20,16 @@ typedef struct InodeTable {
     InodeEntry* tail;
 } InodeTable;
 
-typedef enum FILE_OP {
+typedef enum FileOp {
     READ = 0,
     WRITE = 1,
     READWRITE = 2
-} FILE_OP;
+} FileOp;
 
 typedef struct OpenFileEntry OpenFileEntry;
 struct OpenFileEntry{
     char filePath[FILE_PATH_LENGTH];
-    FILE_OP fileOp;
+    FileOp fileOp;
     InodeEntry* inodeEntry;
     OpenFileEntry* next;
 };

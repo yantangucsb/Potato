@@ -382,8 +382,10 @@ void PrintInfo(SuperBlock* super, size_type* inodeId){
 	return;
 }
 
-
-
+//need implement
+ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size){
+    return Success;
+}
 
 
 
