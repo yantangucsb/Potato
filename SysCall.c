@@ -94,6 +94,11 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
             return InodeNotExist;
         }
 
+        //check the file type
+        if(inode.fileType != Directory){
+            return NotDirectory;
+        }
+
         //read in all inode data section
         BYTE* buf = (BYTE*) malloc(inode.fileSize);
         readInodeData(fs, &inode, buf, 0, inode.fileSize);
@@ -119,8 +124,85 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
     return Success;
 }
 
-INT open(char* path_name, FileOp flag, mode_t modes) {
-    size_type inode_id;
+bool checkPermission(bool* permission, FileOp flag){
+    if(flag == READ){
+        if(*permission == false)
+            return false;
+    }else if(flag == WRITE){
+        if(*(permission+1) == false)
+            return false;
+    }else{
+        if(*permission == false || *(permission+1) == false)
+            return false;
+    }
+    return true;
+}
+
+INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
+    //check if the file is already open
+    OpenFileEntry* file_entry = NULL;
+    getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+
+    //if the file is open
+    if(file_entry != NULL && file_entry->fileOp == flag){
+        if(checkPermssion(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
+                printf("%s: Not enough authority to open the file", path_name);
+                return 0;
+        }
+        file_entry->ref++;
+        return 0;
+    }
     
+    //if the file is open but operation is different
+    if(file_entry != NULL){
+        if(checkPermssion(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
+                printf("%s: Not enough authority to open the file", path_name);
+                return 0;
+        }
+
+        addOpenFileEntry(&(fs->open_file_table), path_name, flag, file_entry->inodeEntry);
+        //increase the inode ref
+        file_entry->inodeEntry->ref++;
+        return 0;
+    }
+
+    //covert the path to inode_id
+    size_type inode_id;
+    ErrorCode err = namei(fs, path_name, &inode_id);
+    if(err == InodeNotExist){
+        printf("%s: No such file or directory", path_name);
+    }else if(err == NotDirectory){
+        printf("%s: Not a direcotry", path_name);
+    }
+
+    if(err != Success){
+        return 0;
+    }
+
+    //check if the inode is in InodeTable
+    InodeEntry* inode_entry = NULL;
+    getInodeEntry(&(fs->inode_table), inode_id, inode_entry);
+    if(inode_entry != NULL){
+        if(checkPermssion(inode_entry->inode.ownerPermssion, flag) == false){
+                printf("%s: Not enough authority to open the file", path_name);
+                return 0;
+        }
+        addOpenFileEntry(&(fs->open_file_table), path_name, flag, inode_entry);
+        inode_entry->ref++;
+        return 0;
+    }
+
+    Inode inode;
+    if(getInode(fs, &inode_id, &inode) != Success){
+        printf("get Inode failed.");
+        return 0;
+    }
+    //check permission
+    if(checkPermssion(inode.ownerPermssion, flag) == false){
+        printf("%s: Not enough authority to open the file", path_name);
+        return 0;
+    }
+    addInodeEntry(&(fs->inode_table), inode_id, &inode, inode_entry);
+    addOpenFileEntry(&(fs->open_file_table), path_name, flag, inode_entry);
     return 0;
 }

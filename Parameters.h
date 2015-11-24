@@ -30,6 +30,12 @@ typedef enum {
     InodeNotExist = 14
 } ErrorCode;
 
+type enum {
+    Read = 0,
+    Write = 1,
+    Execute = 2;
+} FilePermType;
+
 typedef enum {
     Regular = 0,
     Directory = 1//,
@@ -52,6 +58,8 @@ typedef enum {
 
 #define FILE_OWNER_LENGTH 14
 #define FILE_NAME_LENGTH 14
+
+//should be checked together with enum FilePermType
 #define PERMISSION_CAT_NUM 3
 #define DIRECT_BLOCK_NUM 10
 

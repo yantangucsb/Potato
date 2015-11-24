@@ -26,8 +26,8 @@ typedef struct Inode{
     //Execution permission for a directory gives the right to search the directory for a file name
     //write permission affects syscall: create, mknod, link, unlink
     bool ownerPermission[PERMISSION_CAT_NUM];
-    bool groupPermission[PERMISSION_CAT_NUM];
-    bool otherPermission[PERMISSION_CAT_NUM];
+//    bool groupPermission[PERMISSION_CAT_NUM];
+//    bool otherPermission[PERMISSION_CAT_NUM];
 
     //File access times: the time the file was last modified, when it was last accessed
     //and when the inode was last modified

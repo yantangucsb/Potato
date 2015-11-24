@@ -12,5 +12,5 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id);
  * @flag: type of open, reading or writing, @modes give file permissions if the file is being created
  * return an integer as file descripter
  */
-INT open(char* path_name, FileOp flag, mode_t modes);
+INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes);
 
