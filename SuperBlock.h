@@ -43,7 +43,6 @@ typedef struct{
 
     //lock fields for the free block and free inode lists
     
-
     //a flag indicating that the super block has been modified
     bool modified;
 } SuperBlockonDisk;

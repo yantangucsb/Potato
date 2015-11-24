@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "string.h"
 #include "FileSystem.h"
 
@@ -96,64 +97,6 @@ ErrorCode readSuperBlock(FileSystem* fs){
     return Success;
 }
 
-
-ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
-    size_type curSize = DIRECT_BLOCK_NUM*BLOCK_SIZE;
-    if(*offset < curSize){
-        size_type index = *offset/BLOCK_SIZE;
-        *block_no = inode->directBlock[index];
-        *block_offset = *offset % BLOCK_SIZE;
-        return Success;
-    }
-    size_type preSize = curSize;
-    curSize += BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
-    if(*offset < curSize){
-        size_type* block = malloc(BLOCK_SIZE);
-        get(fs, inode->singleBlock+fs->super_block.firstDataBlockId, block);
-        size_type index = (*offset - preSize)/BLOCK_SIZE;
-        *block_no = *(block+index);
-        *block_offset = (*offset - preSize) % BLOCK_SIZE;
-        free(block);
-        return Success;
-    }
-
-    preSize = curSize;
-    curSize += BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
-    if(*offset < curSize){
-        size_type* block = malloc(BLOCK_SIZE);
-        get(fs, inode->doubleBlock+fs->super_block.firstDataBlockId, block);
-        size_type index = (*offset - preSize)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
-        *block_no = *(block+index);
-        get(fs, *block_no+fs->super_block.firstDataBlockId, block);
-        index = (*offset - preSize - index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE)/BLOCK_SIZE;
-        *block_no = *(block+index);
-        *block_offset = (*offset - preSize) % BLOCK_SIZE;
-        free(block);
-
-        return Success;
-    }
-
-    preSize = curSize;
-    curSize += BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
-    if(*offset < curSize){
-        size_type* block = malloc(BLOCK_SIZE);
-        get(fs, inode->tripleBlock+fs->super_block.firstDataBlockId, block);
-        size_type index = (*offset - preSize)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
-        *block_no = *(block+index);
-        get(fs, *block_no+fs->super_block.firstDataBlockId, block);
-        index = (*offset - preSize - index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
-        *block_no = *(block+index);
-        get(fs, *block_no+fs->super_block.firstDataBlockId, block);
-        index = (*offset - preSize -index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE)/BLOCK_SIZE;
-        *block_no = *(block+index);
-        *block_offset = (*offset - preSize)%BLOCK_SIZE;
-
-        free(block);
-        return Success;
-    }
-
-    return OutOfBound;
-}
 
 void printFileSystem(FileSystem* fs){
     printf("-----Potato info-----\n");

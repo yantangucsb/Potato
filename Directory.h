@@ -5,7 +5,7 @@
 
 #include "Parameters.h"
 
-typedef struct DirENtry {
-    BYTE key[];
-    size_type InodeId;
-} DirEntry
+typedef struct DirEntry {
+    BYTE key[FILE_NAME_LENGTH];
+    size_type inodeId;
+} DirEntry;

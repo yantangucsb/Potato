@@ -6,6 +6,8 @@
 #include "SuperBlock.h"
 #include "FreeListNode.h"
 #include "DiskEmulator.h"
+#include "OpenFileTable.h"
+#include "Directory.h"
 
 typedef struct FileSystem{
     SuperBlock super_block;
@@ -14,6 +16,10 @@ typedef struct FileSystem{
     FreeListNode dataBlockFreeListHeadBuf;
     FreeListNode dataBlockFreeListTailBuf;
     
+    OpenFileTable open_file_table;
+
+    InodeTable inode_table;
+
     DiskEmulator disk_emulator;
 
 } FileSystem;
@@ -26,6 +32,5 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs);
 
 ErrorCode readSuperBlock(FileSystem* fs);
 
-ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset);
-
 void printFileSystem(FileSystem* fs);
+

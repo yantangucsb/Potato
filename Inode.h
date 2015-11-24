@@ -3,6 +3,7 @@
  * By Yan
  */
 
+#pragma once
 #include <stdbool.h>
 #include "Parameters.h"
 
@@ -23,6 +24,7 @@ typedef struct Inode{
     //File access permissions: Three classes -- the owner, the group owner and other users.
     //The access rights for each of the three classes can be set individually: read, write and execute
     //Execution permission for a directory gives the right to search the directory for a file name
+    //write permission affects syscall: create, mknod, link, unlink
     bool ownerPermission[PERMISSION_CAT_NUM];
     bool groupPermission[PERMISSION_CAT_NUM];
     bool otherPermission[PERMISSION_CAT_NUM];

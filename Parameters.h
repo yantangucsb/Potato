@@ -24,7 +24,9 @@ typedef enum {
     Err_GetBlock = 8,
     Err_PutBlock = 9,
     Err_InodeFull = 10,
-    NoFreeDataBlock = 11
+    NoFreeDataBlock = 11,
+    NotDirectory = 13,      //for namei
+    InodeNotExist = 14
 } ErrorCode;
 
 typedef enum {
@@ -56,3 +58,6 @@ typedef enum {
 
 //Inode Time
 #define TIME_LENGTH 32
+
+#define ROOT_INODE_ID 0
+#define FILE_PATH_LENGTH 512
