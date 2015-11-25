@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "InodeAccess.h"
+#include "DataBlockAccess.h"
 
 int main(int argc, char *argv[]){
     FileSystem fs;
@@ -14,14 +15,12 @@ int main(int argc, char *argv[]){
 //    printDisk(&(fs.disk_emulator), 0);
     printf("size of Inode: %lu\n", sizeof(Inode));
     printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));
-    printFileSystem(&fs);
-    readSuperBlock(&fs);
-    printFileSystem(&fs);
-
+//    readSuperBlock(&fs);
+//    printFileSystem(&fs);
     
     
-    
-    
+    //test inode access    
+/*    
     size_type inodeId;
     Inode inode;
     
@@ -32,7 +31,7 @@ int main(int argc, char *argv[]){
     printf("[Initialize Inode] Test is Successful ~(￣▽￣)~\n");
     printf("[Put Inode] Test is Successful ~(￣▽￣)~\n");
     printf("[Allocate Inode] Test is Successful ~(￣▽￣)~\n");
-    printFileSystem(&fs);
+    
     for (inodeId=0;inodeId<103;inodeId++)
     	freeInode(&fs, &inodeId);
     printf("[Free Inode] Test is Successful ~(￣▽￣)~\n");
@@ -41,7 +40,50 @@ int main(int argc, char *argv[]){
     	allocInode(&fs, &inodeId, &inode);
     printf("[Garbage Collection] Test is Successful ~(￣▽￣)~\n");
     
+  */
+
+    //test data block access
+    size_type j;
+    for (j=0; j<129; j++){
+        allocBlock(&fs, &j);
+        printf("Alloc data block %ld successfully.\n", j);
+        printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    }
+
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
     
+    for (j=128; j>=0; j--)
+        freeBlock(&fs, &j);
+
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
     
+    for (j=0; j<10; j++){
+        size_type k;
+        allocBlock(&fs, &k);
+        printf("Alloc data block %ld successfully.\n", k);
+        printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    }
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
+    
+    for(j = 104848; j>=0; j--){
+        size_type k;
+        if(allocBlock(&fs, &k) == NoFreeDataBlock)
+            printf("No free Blocks available.\n");
+    }
+
+    printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
+
+    for(j = 9; j>=0; j--){
+        freeBlock(&fs, &j);
+        printf("Current free block num: %ld\n", fs.super_block.numOfFreeBlocks);
+    }
+        
+    printFreeListNode(&(fs.dataBlockFreeListHeadBuf));
+    printFreeListNode(&(fs.dataBlockFreeListTailBuf));
     return 0;
 }

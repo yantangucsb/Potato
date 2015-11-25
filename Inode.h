@@ -39,10 +39,10 @@ typedef struct Inode{
     size_type numOfLinks;
 
     //Table of contents for the disk addresses of data in a file
-    addr_type directBlock[DIRECT_BLOCK_NUM];
-    addr_type singleBlock;
-    addr_type doubleBlock;
-    addr_type tripleBlock;
+    size_type directBlock[DIRECT_BLOCK_NUM];
+    size_type singleBlock;
+    size_type doubleBlock;
+    size_type tripleBlock;
 
     //File size -- It is 1 greater than the highest byte offset of data in the file
     size_type fileSize;
