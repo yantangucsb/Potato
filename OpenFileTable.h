@@ -22,7 +22,9 @@ typedef struct InodeTable {
 typedef enum FileOp {
     READ = 0,
     WRITE = 1,
-    READWRITE = 2
+    READWRITE = 2,
+    TRUNCATE = 3,
+    APPEND = 4
 } FileOp;
 
 typedef struct OpenFileEntry OpenFileEntry;
@@ -30,6 +32,7 @@ struct OpenFileEntry{
     char filePath[FILE_PATH_LENGTH];
     FileOp fileOp;
     size_type ref;
+    size_type offset;
     InodeEntry* inodeEntry;
     OpenFileEntry* next;
 };

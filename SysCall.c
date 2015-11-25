@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "SysCall.h"
 
@@ -128,7 +129,7 @@ bool checkPermission(bool* permission, FileOp flag){
     if(flag == READ){
         if(*permission == false)
             return false;
-    }else if(flag == WRITE){
+    }else if(flag == WRITE || flag == TRUNCATE || flag == APPEND){
         if(*(permission+1) == false)
             return false;
     }else{
@@ -145,9 +146,9 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
 
     //if the file is open
     if(file_entry != NULL && file_entry->fileOp == flag){
-        if(checkPermssion(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
+        if(checkPermission(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
-                return 0;
+                return -1;
         }
         file_entry->ref++;
         return 0;
@@ -155,9 +156,9 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     
     //if the file is open but operation is different
     if(file_entry != NULL){
-        if(checkPermssion(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
+        if(checkPermission(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
-                return 0;
+                return -1;
         }
 
         addOpenFileEntry(&(fs->open_file_table), path_name, flag, file_entry->inodeEntry);
@@ -176,16 +177,16 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     }
 
     if(err != Success){
-        return 0;
+        return -1;
     }
 
     //check if the inode is in InodeTable
     InodeEntry* inode_entry = NULL;
     getInodeEntry(&(fs->inode_table), inode_id, inode_entry);
     if(inode_entry != NULL){
-        if(checkPermssion(inode_entry->inode.ownerPermssion, flag) == false){
+        if(checkPermission(inode_entry->inode.ownerPermssion, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
-                return 0;
+                return -1;
         }
         addOpenFileEntry(&(fs->open_file_table), path_name, flag, inode_entry);
         inode_entry->ref++;
@@ -195,12 +196,12 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     Inode inode;
     if(getInode(fs, &inode_id, &inode) != Success){
         printf("get Inode failed.");
-        return 0;
+        return -1;
     }
     //check permission
-    if(checkPermssion(inode.ownerPermssion, flag) == false){
+    if(checkPermission(inode.ownerPermssion, flag) == false){
         printf("%s: Not enough authority to open the file", path_name);
-        return 0;
+        return -1;
     }
     addInodeEntry(&(fs->inode_table), inode_id, &inode, inode_entry);
     addOpenFileEntry(&(fs->open_file_table), path_name, flag, inode_entry);

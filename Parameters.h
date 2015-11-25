@@ -30,10 +30,10 @@ typedef enum {
     InodeNotExist = 14
 } ErrorCode;
 
-type enum {
+typedef enum {
     Read = 0,
     Write = 1,
-    Execute = 2;
+    Execute = 2
 } FilePermType;
 
 typedef enum {
