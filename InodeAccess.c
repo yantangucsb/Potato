@@ -265,14 +265,14 @@ ErrorCode InitInode(Inode* inode){
 	inode->ownerPermission[1]=true;
 	inode->ownerPermission[2]=true;
 	
-	inode->groupPermission[0]=true;
+/*	inode->groupPermission[0]=true;
 	inode->groupPermission[1]=false;
 	inode->groupPermission[2]=true;
 	
 	inode->otherPermission[0]=false;
 	inode->otherPermission[1]=false;
 	inode->otherPermission[2]=true;
-
+*/
 	//time initialization
 	time_t current_time;
 	char* c_time_string;

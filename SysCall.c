@@ -146,7 +146,7 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
 
     //if the file is open
     if(file_entry != NULL && file_entry->fileOp == flag){
-        if(checkPermission(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
+        if(checkPermission(file_entry->inodeEntry->inode.ownerPermission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
@@ -156,7 +156,7 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     
     //if the file is open but operation is different
     if(file_entry != NULL){
-        if(checkPermission(file_entry->inodeEntry->inode.ownerPermssion, flag) == false){
+        if(checkPermission(file_entry->inodeEntry->inode.ownerPermission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
@@ -184,7 +184,7 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     InodeEntry* inode_entry = NULL;
     getInodeEntry(&(fs->inode_table), inode_id, inode_entry);
     if(inode_entry != NULL){
-        if(checkPermission(inode_entry->inode.ownerPermssion, flag) == false){
+        if(checkPermission(inode_entry->inode.ownerPermission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
@@ -199,7 +199,7 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
         return -1;
     }
     //check permission
-    if(checkPermission(inode.ownerPermssion, flag) == false){
+    if(checkPermission(inode.ownerPermission, flag) == false){
         printf("%s: Not enough authority to open the file", path_name);
         return -1;
     }
