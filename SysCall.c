@@ -4,8 +4,11 @@
 #include <string.h>
 #include "SysCall.h"
 
-ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
+ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
+    printf("Get block_id for offset %ld\n", *offset);
+
     size_type curSize = DIRECT_BLOCK_NUM*BLOCK_SIZE;
+    //if the offset is in directBlock
     if(*offset < curSize){
         size_type index = *offset/BLOCK_SIZE;
         *block_no = inode->directBlock[index];
@@ -14,6 +17,8 @@ ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block
     }
     size_type preSize = curSize;
     curSize += BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
+
+    //if the offset is in singleBlock
     if(*offset < curSize){
         size_type* block = malloc(BLOCK_SIZE);
         get(fs, inode->singleBlock+fs->super_block.firstDataBlockId, block);
@@ -26,6 +31,8 @@ ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block
 
     preSize = curSize;
     curSize += BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
+    
+    //if the offset is in doubleBlock
     if(*offset < curSize){
         size_type* block = malloc(BLOCK_SIZE);
         get(fs, inode->doubleBlock+fs->super_block.firstDataBlockId, block);
@@ -42,22 +49,30 @@ ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block
 
     preSize = curSize;
     curSize += BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
+
+    //if the offset is in tripleBlock
     if(*offset < curSize){
         size_type* block = malloc(BLOCK_SIZE);
         get(fs, inode->tripleBlock+fs->super_block.firstDataBlockId, block);
         size_type index = (*offset - preSize)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
+        printf("tripleBlock index: %ld\n", index);
         *block_no = *(block+index);
         get(fs, *block_no+fs->super_block.firstDataBlockId, block);
-        index = (*offset - preSize - index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
+        preSize += index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
+        index = (*offset - preSize)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
+        printf("doubleBlock index: %ld\n", index);
         *block_no = *(block+index);
         get(fs, *block_no+fs->super_block.firstDataBlockId, block);
-        index = (*offset - preSize -index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE)/BLOCK_SIZE;
+        preSize += index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
+        index = (*offset - preSize)/BLOCK_SIZE;
+        printf("singleBlock index: %ld\n", index);
         *block_no = *(block+index);
         *block_offset = (*offset - preSize)%BLOCK_SIZE;
         
         free(block);
         return Success;
     }
+
     return OutOfBound;
 }
 
@@ -66,7 +81,7 @@ ErrorCode bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block
  * path_name should be absolute path from mounting point
  * Error: NoInode
  */
-ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
+ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
     if(path_name == 0){
         return InodeNotExist;
     }
@@ -89,6 +104,8 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
     //separate each directory name by /;
     char* token = strtok(tmp_path, "/");
     while(token != NULL){
+        printf("Getting inode id for %s\n", token);
+        
         //get inode for current directory
         Inode inode;
         if(getInode(fs, inode_id, &inode) != Success){
@@ -107,13 +124,15 @@ ErrorCode namei(FileSystem* fs, char* path_name, size_type* inode_id){
         //Linear scan each entry to search for token
         DirEntry* dir_entry = (DirEntry*) buf;
         bool foundEntry = false;
-        while(dir_entry != NULL){
-            if(strcmp(dir_entry->key, token) == 0 && dir_entry->inodeId != -1){
+        size_type curSize = 0;
+        while(curSize < inode.fileSize){
+            printf("cur file/dir name is : %s\n", (dir_entry+curSize)->key);
+            if(strcmp((dir_entry+curSize)->key, token) == 0 && (dir_entry+curSize)->inodeId != -1){
                 *inode_id = dir_entry->inodeId;
                 foundEntry = true;
                 break;
             }
-            dir_entry ++;
+            curSize += sizeof(DirEntry);
         }
         free(buf);
         if(!foundEntry){
@@ -139,7 +158,7 @@ bool checkPermission(bool* permission, FileOp flag){
     return true;
 }
 
-INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
+INT Potato_open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     //check if the file is already open
     OpenFileEntry* file_entry = NULL;
     getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
@@ -169,7 +188,7 @@ INT open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
 
     //covert the path to inode_id
     size_type inode_id;
-    ErrorCode err = namei(fs, path_name, &inode_id);
+    ErrorCode err = Potato_namei(fs, path_name, &inode_id);
     if(err == InodeNotExist){
         printf("%s: No such file or directory", path_name);
     }else if(err == NotDirectory){

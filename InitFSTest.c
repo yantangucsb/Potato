@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
     printf("size of Inode: %lu\n", sizeof(Inode));
     printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));
 //    readSuperBlock(&fs);
-//    printFileSystem(&fs);
+    printFileSystem(&fs);
     
     
     //test inode access    

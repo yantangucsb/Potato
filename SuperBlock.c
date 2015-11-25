@@ -28,8 +28,11 @@ ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_blo
     //initialize the free inode list cache
     super_block->freeInodeIndex = num_of_free_inodes > FREE_INODE_NUM? FREE_INODE_NUM - 1: num_of_free_inodes;
     int i = super_block->freeInodeIndex;
+
+    //inode 0 is reserved for root directory
+    //This should be done in initFS
     for(; i>=0; i--){
-        super_block->freeInodeList[i] = super_block->freeInodeIndex-i;
+        super_block->freeInodeList[i] = super_block->freeInodeIndex-i+1;
     }
 
     super_block->modified = 0;
