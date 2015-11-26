@@ -15,4 +15,5 @@ void PrintInfo(SuperBlock* super, size_type* inodeId);
 
 //Read inode data sections into buf
 //Need implementation
-ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size);
+ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte);
+ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte);
