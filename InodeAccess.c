@@ -484,6 +484,113 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
 
 
 
+ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte){
+    //write the data refered by inode from buffer to disk (from start to start+size-1), inode is already in memory
+    //Input is FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size
+    //If successful, BYTE* buf will be written to disk
+    
+    //start and end are data offset in BYTE from direct/indirect blocks in Inode
+    size_type end = start + size - 1;
+   	//the actual number of BYTEs that have been written
+   	*writebyte = end-start+1;    
+
+    //If the access is out of bound, or size ==0
+    if (start<0 || size==0){
+    	printf("[Write Inode Data] Access OutofBound)\n");
+    	return OutOfBound;
+    }
+    
+    //if write beyond the size of file, then inode->fileSize should be modified
+    if (end+1 >= inode->fileSize){
+    	inode->fileSize = end+1;
+    }
+    
+    size_type block_no; 
+    size_type block_offset;
+    
+    //everytime write a data block from disk to memory, modified the data_block_buffer,
+    //then write it back to disk
+	void *data_block_buffer;
+	data_block_buffer = (void *) malloc (BLOCK_SIZE);	
+	BYTE *data_pt = data_block_buffer;//pointer to buffer
+		
+	BYTE *data_in_pt = buf[0];//pointer to input buffer
+	size_type offset_buf = 0;//input buffer offset
+	
+	int flag = 0;//0-first chunk, 1-middle chunk, 2-last chunk
+	
+    while (start <= end){
+    	//ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset)
+    	//defined in Syscall.c
+    	
+    	ErrorCode err_writeinodedata = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
+    	if (err_writeinodedata == Success){
+    		//get() is defined in FileSystem.c
+    		ErrorCode err_get = get(fs, block_no, data_block_buffer);
+    		if (err_get == Success){
+    			if ((end-start+1)>=BLOCK_SIZE){
+    				if (flag == 0){
+    					//the first chunk
+    					memcpy(&data_pt[block_offset], data_in_pt, BLOCK_SIZE-block_offset);
+    					//update pointer to output buffer
+    					offset_buf = BLOCK_SIZE-block_offset;
+    					data_in_pt = &buf[offset_buf];
+    					//update start position
+    					start = start + BLOCK_SIZE-block_offset;
+    					//begin writing middle chunks
+    					flag = 1;
+    				}
+    				if (flag == 1){
+    					//the middle chunk
+    					memcpy(data_pt, data_in_pt, BLOCK_SIZE);
+    					//update pointer to output buffer
+    					offset_buf = BLOCK_SIZE+offset_buf;
+    					data_in_pt = &buf[offset_buf];
+    					//update start position
+    					start = start + BLOCK_SIZE;
+    				}
+    			}
+    			else{
+    				if (flag == 0){
+    					//the first chunk
+    					memcpy(&data_pt[block_offset], data_in_pt, end-start+1);
+    					//update start position (quit while)
+    					start = start + BLOCK_SIZE;
+    				}
+    				if (flag == 1){
+    					//the last chunk
+    					memcpy(data_pt, data_in_pt, end-start+1);
+    					//update start position (quit while)
+    					start = start + BLOCK_SIZE;
+    				}
+    			}
+    			//ErrorCode put(FileSystem *fs, size_type block_no, void* buffer)
+    			//defined in FileSystem.c
+    			ErrorCode err_put = put(fs, block_no, data_block_buffer);
+    			if (err_put != Success){
+    				printf("[Write Inode Data] Error putting data block\n");
+    				free(data_block_buffer);
+    				return err_put;
+    			}
+    		}
+    		else{
+    			printf("[Write Inode Data] Error getting data block\n");
+    			free(data_block_buffer);
+    			return err_get;
+    		}
+    	}
+    	else{
+    		printf("[Write Inode Data] Error calling bmap\n");
+    		free(data_block_buffer);
+    		return err_writeinodedata;
+    	}
+    }
+    free(data_block_buffer);
+    printf("[Write Inode Data] Success!\n");
+    return Success;
+}
+
+
 
 
 
