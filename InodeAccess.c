@@ -382,8 +382,93 @@ void PrintInfo(SuperBlock* super, size_type* inodeId){
 	return;
 }
 
-//need implement
+
 ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size){
+    //read the data refered by inode from disk to buffer (from start to start+size-1), inode is already in memory
+    //Input is FileSystem* fs, Inode* inode , size_type start, size_type size
+    //If successful, BYTE* buf will be filled
+    
+    //start and end are data offset in BYTE from direct/indirect blocks in Inode
+    size_type end = start + size - 1;
+    
+    //If the access is out of bound, or size ==0
+    if (start<0 || end>inode->fileSize || size==0){
+    	printf("[Read Inode Data] Access OutofBound)\n");
+    	return OutOfBound;
+    }
+    
+    size_type block_no; 
+    size_type block_offset;
+    //everytime read a data block from disk to memory
+	void *data_block_buffer;
+	data_block_buffer = (void *) malloc (BLOCK_SIZE);
+	
+	BYTE *data_pt = data_block_buffer;//pointer to buffer
+	BYTE *data_out_pt = buf[0];//pointer to output buffer
+	size_type offset_buf = 0;//output buffer offset
+	int flag = 0;//0-first chunk, 1-middle chunk, 2-last chunk
+	//int count = 0;//how many blocks have been read
+	
+    while (start <= end){
+    	//ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset)
+    	//defined in Syscall.c
+    	
+    	ErrorCode err_readinodedata = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
+    	if (err_readinodedata == Success){    	    	
+    		//get() is defined in FileSystem.c
+    		ErrorCode err_get = get(fs, block_no, data_block_buffer);
+    		if (err_get == Success){
+    			if ((end-start+1)>=BLOCK_SIZE){
+    				if (flag == 0){
+    					//the first chunk
+    					memcpy(data_out_pt, &data_pt[block_offset], BLOCK_SIZE-block_offset);
+    					//update pointer to output buffer
+    					offset_buf = BLOCK_SIZE-block_offset;
+    					data_out_pt = &buf[offset_buf];
+    					//update start position
+    					start = start + BLOCK_SIZE-block_offset;
+    					//begin reading middle chunks
+    					flag = 1;
+    				}
+    				if (flag == 1){
+    					//the middle chunk
+    					memcpy(data_out_pt, data_pt, BLOCK_SIZE);
+    					//update pointer to output buffer
+    					offset_buf = BLOCK_SIZE+offset_buf;
+    					data_out_pt = &buf[offset_buf];
+    					//update start position
+    					start = start + BLOCK_SIZE;
+    				}
+    			}
+    			else{
+    				if (flag == 0){
+    					//the first chunk
+    					memcpy(data_out_pt, &data_pt[block_offset], end-start+1);
+    					//update start position (quit while)
+    					start = start + BLOCK_SIZE;
+    				}
+    				if (flag == 1){
+    					//the last chunk
+    					memcpy(data_out_pt, data_pt, end-start+1);
+    					//update start position (quit while)
+    					start = start + BLOCK_SIZE;
+    				}
+    			}
+    		}
+    		else{
+    			printf("[Read Inode Data] Error getting data block\n");
+    			free(data_block_buffer);
+    			return err_get;
+    		}
+    	}
+    	else{
+    		printf("[Read Inode Data] Error calling bmap\n");
+    		free(data_block_buffer);
+    		return err_readinodedata;
+    	}
+    }
+    free(data_block_buffer);
+    printf("[Read Inode Data] Success!\n");
     return Success;
 }
 
