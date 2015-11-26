@@ -383,7 +383,7 @@ void PrintInfo(SuperBlock* super, size_type* inodeId){
 }
 
 
-ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size){
+ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte){
     //read the data refered by inode from disk to buffer (from start to start+size-1), inode is already in memory
     //Input is FileSystem* fs, Inode* inode , size_type start, size_type size
     //If successful, BYTE* buf will be filled
@@ -392,10 +392,18 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     size_type end = start + size - 1;
     
     //If the access is out of bound, or size ==0
-    if (start<0 || end>inode->fileSize || size==0){
+    if (start<0 || size==0){
     	printf("[Read Inode Data] Access OutofBound)\n");
     	return OutOfBound;
     }
+    
+    //if read beyond the end of file, then read until end of file
+    if (end+1 >= inode->fileSize){
+    	end = inode->fileSize-1;
+    	//the actual number of BYTEs that have been read
+    	*readbyte = end-start+1;
+    }
+    
     
     size_type block_no; 
     size_type block_offset;

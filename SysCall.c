@@ -119,7 +119,9 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
 
         //read in all inode data section
         BYTE* buf = (BYTE*) malloc(inode.fileSize);
-        readInodeData(fs, &inode, buf, 0, inode.fileSize);
+        //modified by peng: adding a read byte argument
+        size_type readbyte;
+        readInodeData(fs, &inode, buf, 0, inode.fileSize, &readbyte);
 
         //Linear scan each entry to search for token
         DirEntry* dir_entry = (DirEntry*) buf;
