@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "InodeAccess.h"
+#include "SysCall.h"
 
 size_type getFreeListNum (SuperBlock* super) {
 	int i;
@@ -412,7 +413,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
 	data_block_buffer = (void *) malloc (BLOCK_SIZE);
 	
 	BYTE *data_pt = data_block_buffer;//pointer to buffer
-	BYTE *data_out_pt = buf[0];//pointer to output buffer
+	BYTE *data_out_pt = (BYTE*) buf;//pointer to output buffer
 	size_type offset_buf = 0;//output buffer offset
 	int flag = 0;//0-first chunk, 1-middle chunk, 2-last chunk
 	//int count = 0;//how many blocks have been read
@@ -514,7 +515,7 @@ ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type star
 	data_block_buffer = (void *) malloc (BLOCK_SIZE);	
 	BYTE *data_pt = data_block_buffer;//pointer to buffer
 		
-	BYTE *data_in_pt = buf[0];//pointer to input buffer
+	BYTE *data_in_pt = (BYTE*) buf;//pointer to input buffer
 	size_type offset_buf = 0;//input buffer offset
 	
 	int flag = 0;//0-first chunk, 1-middle chunk, 2-last chunk
