@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]){
    DiskEmulator diskEmulator;
-   initDisk(&diskEmulator, 256*16);
+   initDisk(&diskEmulator, BLOCK_SIZE*16);
 
    char data[BLOCK_SIZE];
    int i;
@@ -17,11 +17,13 @@ int main(int argc, char *argv[]){
         data[i] = (char)i;
    }
    writeBlock(&diskEmulator, 4, &data);
+   printf("Block 4 data on disk:\n");
    printDisk(&diskEmulator, 4);
-   char* out_buffer = malloc(BLOCK_SIZE);
-   readBlock(&diskEmulator, 4, out_buffer);
+   BYTE out_buffer[BLOCK_SIZE];
+   readBlock(&diskEmulator, 4, &out_buffer);
+   printf("Test readBlock on block 4:\n");
    for(i=0; i<BLOCK_SIZE; i++){
-       char ch = *(out_buffer+i);
+       char ch = out_buffer[i];
        printf("%d ", (int)ch);
    }
    printf("\n");

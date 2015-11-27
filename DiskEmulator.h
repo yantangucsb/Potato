@@ -7,6 +7,14 @@
 
 #include "Parameters.h"
 
+//Phase 2
+/*
+typedef struct{
+    INT disk;
+} DiskEmulator;
+*/
+
+//Phase 1
 typedef struct{
     BYTE* disk;
 } DiskEmulator; 
