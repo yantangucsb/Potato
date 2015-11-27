@@ -123,18 +123,21 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
         size_type readbyte;
         readInodeData(fs, &inode, buf, 0, inode.fileSize, &readbyte);
 
+        printf("file size for inode %ld: %ld\n", *inode_id, inode.fileSize);
+        printf("1st block for cur inode: %ld\n", inode.directBlock[0]); 
         //Linear scan each entry to search for token
         DirEntry* dir_entry = (DirEntry*) buf;
         bool foundEntry = false;
         size_type curSize = 0;
         while(curSize < inode.fileSize){
             printf("cur file/dir name is : %s\n", (dir_entry+curSize)->key);
-            if(strcmp((dir_entry+curSize)->key, token) == 0 && (dir_entry+curSize)->inodeId != -1){
+            if(strcmp(dir_entry->key, token) == 0 && dir_entry->inodeId != -1){
                 *inode_id = dir_entry->inodeId;
                 foundEntry = true;
                 break;
             }
             curSize += sizeof(DirEntry);
+            dir_entry++;
         }
         free(buf);
         if(!foundEntry){

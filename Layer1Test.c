@@ -19,16 +19,20 @@ void testNamei(){
     initOpenFileTable(&(fs.open_file_table));
     initInodeTable(&(fs.inode_table));
 
+    //create root directory
     Inode inode;
     size_type inode_id = ROOT_INODE_ID;
     if(getInode(&fs, &inode_id, &inode)){
         printf("root directory not exist.\n");
     }
+
+    //allock a block to root directory
     size_type block_id;
     allocBlock(&fs, &block_id);
     inode.directBlock[0] = block_id;
     inode.fileType = Directory;
 
+    //write 3 entries to root directory
     DirEntry dir_entry[3];
     strcpy(dir_entry[0].key, ".");
     dir_entry[0].inodeId = ROOT_INODE_ID;
@@ -37,20 +41,51 @@ void testNamei(){
 
     strcpy(dir_entry[2].key, "hello");
     size_type second_inodeId;
+
+    //alloc an inode to hello file
     Inode second_inode;
     allocInode(&fs, &second_inodeId, &second_inode);
     printf("inode id for hello is: %ld\n", second_inodeId);
 
     dir_entry[2].inodeId = second_inodeId;
+
+    //set root directory file size
     inode.fileSize = sizeof(dir_entry);
     printf("size of dir_entry: %ld\n", sizeof(dir_entry));
+
+    //write dir entries to data block
     BYTE* buf = malloc(BLOCK_SIZE);
     memcpy(buf, &dir_entry, sizeof(dir_entry));
     put(&fs, block_id + fs.super_block.firstDataBlockId, buf);
-    free(buf);
     
+    //write root directory to disk
     putInode(&fs, &inode_id, &inode);
+    size_type readbyte;
+    
+    //test if write successfully
+    get(&fs, inode.directBlock[0] + fs.super_block.firstDataBlockId, buf);
+    DirEntry* cur_entry = (DirEntry*) buf;
+    size_type curSize = 0;
+    while(curSize < inode.fileSize){
+        printf("dir entry name: %s, inode id: %ld\n", cur_entry->key, cur_entry->inodeId);
+        cur_entry++;
+        curSize += sizeof(DirEntry);
+    }
+    
+    //test readInodeData
+    readInodeData(&fs, &inode, buf, 0, inode.fileSize, &readbyte);
 
+    cur_entry = (DirEntry*) buf;
+    curSize = 0;
+    while(curSize < inode.fileSize){
+        printf("dir entry name: %s, inode id: %ld\n", cur_entry->key, cur_entry->inodeId);
+        cur_entry++;
+        curSize += sizeof(DirEntry);
+    }
+
+    free(buf);
+
+    //test cases for namei
     if(Potato_namei(&fs, "/", &inode_id) != Success){
         printf("Potato_namei failed for path /\n");
     }
