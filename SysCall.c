@@ -110,7 +110,7 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
     //separate each directory name by /;
     char* token = strtok(tmp_path, "/");
     while(token != NULL){
-        printf("Getting inode id for %s\n", token);
+        printf("[namei] Getting inode id for %s\n", token);
         
         //get inode for current directory
         Inode inode;
@@ -129,14 +129,14 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
         size_type readbyte;
         readInodeData(fs, &inode, buf, 0, inode.fileSize, &readbyte);
 
-        printf("file size for inode %ld: %ld\n", *inode_id, inode.fileSize);
-        printf("1st block for cur inode: %ld\n", inode.directBlock[0]); 
+        printf("[namei] file size for inode %ld: %ld\n", *inode_id, inode.fileSize);
+        printf("[namei] 1st block for cur inode: %ld\n", inode.directBlock[0]); 
         //Linear scan each entry to search for token
         DirEntry* dir_entry = (DirEntry*) buf;
         bool foundEntry = false;
         size_type curSize = 0;
         while(curSize < inode.fileSize){
-            printf("cur file/dir name is : %s\n", dir_entry->key);
+            printf("[namei] cur file/dir name is : %s\n", dir_entry->key);
             if(strcmp(dir_entry->key, token) == 0 && dir_entry->inodeId != -1){
                 *inode_id = dir_entry->inodeId;
                 foundEntry = true;
