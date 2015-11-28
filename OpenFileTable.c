@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "OpenFileTable.h"
 
@@ -80,7 +81,7 @@ ErrorCode hasINodeEntry(InodeTable* inode_table, size_type inode_id)
 
 ErrorCode removeOpenFileEntry(OpenFileTable* open_file_table, char* path_name) {
     OpenFileEntry* prev_entry = NULL;
-    OpenFIleEntry* cur_entry = open_file_table->head;
+    OpenFileEntry* cur_entry = open_file_table->head;
     while(cur_entry != NULL){
         if(strcmp(cur_entry->filePath, path_name) == 0) {
             if(prev_entry == NULL) {

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 #include "SysCall.h"
 #include "errno.h"
 #include "pwd.h"
@@ -1422,7 +1423,7 @@ INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen) {
         }
         else {
             len -= cur_inode->fileSize - file_block_id * BLOCK_SIZE;
-            bfree(fs, &cur_inode, file_block_id); // TODO: TO BE DONE
+            Potato_bfree(fs, cur_inode, file_block_id); 
             file_block_id--;
 
         }
@@ -1431,7 +1432,7 @@ INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen) {
         	if(len < BLOCK_SIZE) {
         		len = 0;
         	} else {
-        		bfree(fs, &cur_inode, file_block_id);
+        		Potato_bfree(fs, cur_inode, file_block_id);
         		len -= BLOCK_SIZE;
         		file_block_id--;
         	}
