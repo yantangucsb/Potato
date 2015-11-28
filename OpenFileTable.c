@@ -67,3 +67,15 @@ ErrorCode addInodeEntry(InodeTable* inode_table, size_type inode_id, Inode* inod
 }
 
 
+ErrorCode hasINodeEntry(InodeTable* inode_table, size_type inode_id)
+{
+	InodeEntry* cur_entry = inode_table->head;
+	while(cur_entry != NULL){
+		if(cur_entry->id == inode_id)
+			return Success;
+		cur_entry = cur_entry->next;
+	}
+	return Err_hasINodeEntry;
+}
+
+

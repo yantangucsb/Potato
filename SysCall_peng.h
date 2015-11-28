@@ -18,10 +18,10 @@ ErrorCode Potato_unmount(FileSystem* fs);
 ErrorCode Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_type* inodeId);
 
 // deletes a file or directory
-ErrorCode Potato_unlink(FileSystem* fs, char* path);
+ErrorCode Potato_unlink(FileSystem* fs, char* path, size_type* inodeId);
 
 // makes a new directory
-INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid);
+ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid);
 
 // reads directory contents
 INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry);

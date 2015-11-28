@@ -56,3 +56,11 @@ ErrorCode getInodeEntry(InodeTable* inode_table, size_type inode_id, InodeEntry*
  *  inode is addr of a inode, inode_entry is the addr of the entry inserted
  */
 ErrorCode addInodeEntry(InodeTable* inode_table, size_type inode_id, Inode* inode, InodeEntry* inode_entry);
+
+ErrorCode hasINodeEntry(InodeTable* inode_table, size_type inode_id);
+
+
+
+
+
+

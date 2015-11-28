@@ -381,75 +381,102 @@ ErrorCode Potato_unlink(FileSystem* fs, char* path, size_type* inodeId){
         for(offset = 2*sizeof(DirEntry); offset < inode.fileSize; offset += sizeof(DirEntry)) {
             DirEntry entry;
             
-            
-            readINodeData(fs, &inode, (BYTE*) &entry, offset, sizeof(DirEntry));
-            if (entry.INodeID != -1) {
+		    size_type readbyte;
+		    //ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte)
+		    ErrorCode err_readInodeData = readInodeData(fs, &inode, (BYTE*) &entry, offset, sizeof(DirEntry), &readbyte);
+		    if (err_readInodeData != Success){
+		    	printf("[Unlink] Error: fail to read Inode Data!\n");
+		    	return err_readInodeData;
+		    }
+		    
+            if (entry.inodeId != -1) {
                 //call unlink
                 char *recur_path = (char *)malloc(strlen(path) + 1 + strlen(entry.key));
                 strcat(recur_path, path);
                 strcat(recur_path, "/");
                 strcat(recur_path, entry.key);
-                #ifdef DEBUG_VERBOSE
-                printf("l2_unlink continuing recursive \"rm -r %s\"\n", entry.key);
-                #endif
-                if (l2_unlink(fs, recur_path) != 0) {
-                    _err_last = _fs_recursiveUnlinkFail;
-                    THROW(__FILE__, __LINE__, __func__);
-                    return -1;
+                printf("[Unlink] continuing recursive \"rm -r %s\"\n", entry.key);
+                
+                size_type return_inodeId;
+                //ErrorCode Potato_unlink(FileSystem* fs, char* path, size_type* inodeId)
+                ErrorCode err_unlink = Potato_unlink(fs, recur_path, &return_inodeId);
+                if (err_unlink != Success) {
+                	printf("[Unlink] Recursive unlink failed\n");
+                    return err_unlink;
                 }
             }
         }
     }
+    
+    
     //note: the recursion occurs before the freeing step so as to not strand the children files
     //free the inode if and only if linkcount reaches 0 AND inode is not open
-    if(!hasINodeEntry(&fs->inodeTable, id)) {
-        freeINode(fs, id);
+    //BOOL hasINodeEntry(InodeTable* inode_table, size_type inode_id)    
+    if(!hasINodeEntry(&(fs->inodeTable), id)) {
+    	//ErrorCode freeInode(FileSystem* fs, size_type* inodeId)
+    	ErrorCode err_freeInode = freeInode(fs, &id);
+    	if (err_freeInode != Success){
+    		printf("[Unlink] Free Inode failed\n");
+    		return err_freeInode;
+    	}
     }
     else {
-        #ifdef DEBUG
-        printf("l2_unlink found inode %d for file %s in inode table, waiting for close before freeing\n", id, path);
-        #endif
+        printf("Potato_unlink found inode %d for file %s in inode table, waiting for close before freeing\n", id, path);
     }
-
+	
+	
     //remove the inode from the parent directory
-    for(offset = 0; offset < par_inode._in_filesize; offset += sizeof(DirEntry)) {
+    for(offset = 0; offset < par_inode.fileSize; offset += sizeof(DirEntry)) {
         // search parent directory table
         DirEntry entry;
-        readINodeData(fs, &par_inode, (BYTE*) &entry, offset, sizeof(DirEntry));
+        
+		size_type readbyte;
+		//ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte)
+		//readINodeData(fs, &par_inode, (BYTE*) &entry, offset, sizeof(DirEntry));
+		ErrorCode err_readInodeData = readInodeData(fs, &par_inode, (BYTE*) &entry, offset, sizeof(DirEntry), &readbyte);
+		if (err_readInodeData != Success){
+			printf("[Unlink] Error: fail to read Inode Data!\n");
+		  	return err_readInodeData;
+		}
         
         // directory entry found, mark it as removed
         if (strcmp(entry.key, node_name) == 0){
-            #ifdef DEBUG_VERBOSE
-            printf("l2_unlink removing file from parent directory at offset: %d\n", offset);
-            #endif
+            printf("[Unlink] Error: removing file from parent directory at offset: %d\n", offset);
             //strcpy(DEntry->key, "");
-            entry.INodeID = -1;
+            entry.inodeId = -1;
             
             // update the parent directory table
-            writeINodeData(fs, &par_inode, (BYTE*) &entry, offset, sizeof(DirEntry));
+            //writeINodeData(fs, &par_inode, (BYTE*) &entry, offset, sizeof(DirEntry));
+			size_type bytesWritten;
+			//ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
+			err_writeInodeData = writeInodeData(fs, &par_inode, (BYTE*) &entry, offset, sizeof(DirEntry), &bytesWritten);
+			if (err_writeInodeData != Success){
+				printf("[Unlink] Error: fail to write Inode Data!\n");
+				return err_writeInodeData;
+			}
+
         }
     }
     
-    // remove the entry from the inode cache
-    INodeEntry* iEntry = removeINodeCacheEntry(&fs->inodeCache, id);
-    if(iEntry != NULL) {
-        #ifdef DEBUG
-        printf("l2_unlink removed entry id %d from inode cache\n", id);
-        #endif
-        free(iEntry);
-    }
-
-    return 0;    
+    //InodeFreeList
+    //there is no cache anymore..
+    //remove the entry from the inode cache
+    //INodeEntry* iEntry = removeINodeCacheEntry(&fs->inodeCache, id);
+    //if(iEntry != NULL) {
+    //    #ifdef DEBUG
+    //    printf("l2_unlink removed entry id %d from inode cache\n", id);
+    //    #endif
+    //    free(iEntry);
+    //}
+    return Success;
 }
 
 
 
 
 // makes a new directory
-INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
-	#ifdef DEBUG
-    printf("l2_mkdir called for path: %s\n", path);
-    #endif
+ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
+    printf("Potato_mkdir called for path: %s\n", path);
     
     LONG id; // the inode id associated with the new directory
     LONG par_id; // the inode id of the parent directory

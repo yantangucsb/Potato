@@ -29,15 +29,16 @@ typedef enum {
     NoFreeDataBlock = 11,
     NotDirectory = 12,      //for namei
     InodeNotExist = 13,
-    Err_OpenDisk = 14, //for mount
-    Err_FailReadSuperblk = 15, //for mount
-    Err_mapDisk2SuperBlockinMem = 16, //for mount
-    Err_mapSuperBlockonDisk = 17, //for mount
-    Err_initOpenFileTable = 18, //for mount
-    Err_initInodeTable = 19, //for mount
-    Err_destroyDisk = 20, //for closefs
-    Err_mknod = 21, //for mknod
-    Err_unlink = 22, //for unlink
+    Err_OpenDisk = 14, 
+    Err_FailReadSuperblk = 15, 
+    Err_mapDisk2SuperBlockinMem = 16, 
+    Err_mapSuperBlockonDisk = 17, 
+    Err_initOpenFileTable = 18, 
+    Err_initInodeTable = 19, 
+    Err_destroyDisk = 20, 
+    Err_mknod = 21, 
+    Err_unlink = 22, 
+    Err_hasINodeEntry = 23
     
 } ErrorCode;
 
