@@ -24,6 +24,8 @@ typedef struct FileSystem{
 
 } FileSystem;
 
+ErrorCode setDataBlockFreeList(FileSystem* fs);
+
 ErrorCode put(FileSystem* fs, size_type block_no, void* buffer);
 
 ErrorCode get(FileSystem* fs, size_type block_no, void* buffer);
@@ -31,6 +33,8 @@ ErrorCode get(FileSystem* fs, size_type block_no, void* buffer);
 ErrorCode initFS(size_type size, size_type percen, FileSystem* fs);
 
 ErrorCode readSuperBlock(FileSystem* fs);
+
+ErrorCode closefs(FileSystem* fs);
 
 void printFileSystem(FileSystem* fs);
 

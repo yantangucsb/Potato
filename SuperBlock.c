@@ -59,6 +59,7 @@ ErrorCode mapSuperBlockonDisk(SuperBlock* super_block, SuperBlockonDisk* sb_on_d
     
     sb_on_disk->freeInodeIndex = super_block->freeInodeIndex;
     sb_on_disk->modified = false;
+    return Success;
 }
 
 ErrorCode mapDisk2SuperBlockinMem(SuperBlockonDisk* sb_on_disk, SuperBlock* super_block) {
@@ -81,6 +82,7 @@ ErrorCode mapDisk2SuperBlockinMem(SuperBlockonDisk* sb_on_disk, SuperBlock* supe
     size_type num_of_inodes_per_block = BLOCK_SIZE/sizeof(Inode);
     super_block->numOfInodes = num_of_inodes_per_block*(super_block->inodeListSize/BLOCK_SIZE);
     super_block->numOfDataBlocks  = (super_block->systemSize- BLOCK_SIZE - super_block->inodeListSize)/BLOCK_SIZE;
+    return Success;
 }
 
 /*

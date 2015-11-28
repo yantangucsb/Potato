@@ -2,7 +2,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "SysCall.h"
+#include "errno.h"
+#include "pwd.h"
+
 
 ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
     printf("Get block_id for offset %ld\n", *offset);
@@ -231,3 +237,275 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     addOpenFileEntry(&(fs->open_file_table), path_name, flag, inode_entry);
     return 0;
 }
+
+
+// mounts a filesystem from a device
+ErrorCode Potato_mount(FileSystem* fs){
+	//buffer for the superblock of the mounted FS
+	BYTE superblk_buf[BLOCK_SIZE];
+	SuperBlockonDisk* superblk_buf_pt = (SuperBlockonDisk*) superblk_buf;
+	
+	//int open(const char *pathname, int flags, mode_t mode);
+	//A call to open() creates a new open file description, an entry in the system-wide table of open files.  The open file description records
+    //the file offset and the file status flags (see below).  A file descriptor is a reference to an open file description; this reference
+    //is unaffected if pathname is subsequently removed or modified to refer to a different file.
+        
+    //*DISK_PATH is disk partition path
+    //*The argument flags must include one of the following access modes: O_RDONLY, O_WRONLY, or O_RDWR.  These request opening the file read-
+    //only, write-only, or read/write, respectively.
+    //*Permission 666(grant read, write access to everyone)
+	INT diskFile = open(DISK_PATH, O_RDWR, 0666);
+	if (diskFile == -1){
+		fprintf(stderr, "[Potato mount] Error: disk open error %s\n", strerror(errno));
+		return Err_OpenDisk;
+	}
+	
+	//off_t lseek(int fd, off_t offset, int whence);
+	//SEEK_SET : The offset is set to offset bytes.
+	lseek(diskFile, SUPER_BLOCK_OFFSET, SEEK_SET);
+	
+	
+	uint32_t bytesRead = read(diskFile, superblk_buf, BLOCK_SIZE);
+	if(bytesRead < BLOCK_SIZE) {
+		printf("[Potato mount] Error: failed to read superblock from disk!\n");
+		return Err_FailReadSuperblk;
+	}
+	close(diskFile);
+		
+	//ErrorCode mapDisk2SuperBlockinMem(SuperBlockonDisk* sb_on_disk, SuperBlock* super_block)
+	//defined in superblock.c
+	if (mapDisk2SuperBlockinMem(superblk_buf_pt, &(fs->super_block)) != Success){
+		printf("[Potato mount] Error: failed to map Disk to SuperBlock in Mem!\n");
+		return Err_mapDisk2SuperBlockinMem;
+	}
+	
+	//TODO
+	//Is this correct?? to initialize disk_emulator
+	//defined in FileSystem.c
+	initDisk(&(fs->disk_emulator), fs->super_block.systemSize);
+	//set up free list for data block
+	//defined in FileSystem.c
+	setDataBlockFreeList(fs);
+	//set up free list buf
+	//defined in FileSystem.c
+	get(fs, fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListHeadBuf));
+	get(fs, fs->super_block.pDataFreeListTail+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListTailBuf));
+	
+	//ErrorCode initOpenFileTable(OpenFileTable* open_file_table)
+	//defined in FileSystem.c
+	if (initOpenFileTable(&(fs->open_file_table)) != Success){
+		printf("[Potato mount] Error: failed to initialize OpenFileTable!\n");
+		return Err_initOpenFileTable;
+	}
+	//ErrorCode initInodeTable(InodeTable* inode_table)
+	//defined in FileSystem.c
+	if (initInodeTable(&(fs->inode_table)) != Success){
+		printf("[Potato mount] Error: failed to initialize InodeTable!\n");
+		return Err_initInodeTable;
+	}
+	
+    //create root directory for mounted FileSystem
+    Inode inode;
+    size_type inode_id = ROOT_INODE_ID;
+    if(getInode(fs, &inode_id, &inode)!=Success){
+        printf("[Potato mount] Error: root directory not exist.\n");
+        return Err_GetInode;
+    }
+	
+	//TODO is this right??
+    //allocate a block to root directory
+    size_type block_id;
+    allocBlock(fs, &block_id);
+    inode.directBlock[0] = block_id;
+    inode.fileType = Directory;
+	
+	return Success;
+}
+
+// unmounts a filesystem into a device
+ErrorCode Potato_unmount(FileSystem* fs){
+	//TODO
+	//do we need to write free block cache back to disk
+	
+	//ErrorCode mapSuperBlockonDisk(SuperBlock* super_block, SuperBlockonDisk* sb_on_disk)
+	//defined in superblock.c
+	SuperBlockonDisk super_block_on_disk;
+	if (mapSuperBlockonDisk(&(fs->super_block), &(super_block_on_disk)) != Success){
+		printf("[Potato mount] Error: map SuperBlock on Disk.\n");
+		return Err_mapSuperBlockonDisk;
+	}
+	put(fs, SUPER_BLOCK_OFFSET, &(super_block_on_disk));
+		 
+	fs->super_block.modified = false;
+	
+	//close disk to prevent future writes
+	//defined in FileSystem.c
+	closefs(fs);
+		 
+	return Success;
+}
+
+
+
+// makes a new file
+ErrorCode Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_type* inodeId){
+	size_type id; // the inode id of the mounted file system (child directory)
+	size_type par_id; // the inode id of the mount point (parent directory)
+	char par_path[FILE_PATH_LENGTH];
+	
+	//check if the directory already exist
+	if (strcmp(path, "/") == 0) {
+		printf("[Make Node] Error: cannot create root directory outside of initfs!\n");
+		return Err_mknod;
+	}
+	size_type rRes;
+	
+	//ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id)
+	Potato_namei(fs, path, &rRes);
+	
+	if (rRes == -ENOTDIR ) {
+//        _err_last = _fs_NonDirInPath;
+//        THROW(__FILE__, __LINE__, __func__);
+        *inodeId = rRes;
+        return Err_mknod;
+    }
+    if (rRes > 0) {
+        printf("[Make Node] Error: file or directory %s already exists!\n", path);
+        return -EEXIST;
+    }
+    // find the last recurrence of '/'
+    char *ptr;
+    int ch = '/';
+    ptr = strrchr(path, ch);
+    
+    // ptr = "/dir_name"
+    char *dir_name = strtok(ptr, "/");
+   
+    strncpy(par_path, path, strlen(path) - strlen(ptr));
+    par_path[strlen(path) - strlen(ptr)] = '\0';
+
+    // special case for root
+    if(strcmp(par_path, "") == 0) {
+        //printf("its parent is root\n");
+        strcpy(par_path, "/");
+    }
+    
+    //find the inode id of the parent directory
+	//ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id)
+	Potato_namei(fs, par_path, &par_id);
+	
+    // check if the parent directory exists
+    if(par_id < 0) {
+        printf("[Make Node] Error: Parent directory %s is invalid or doesn't exist!\n", par_path);
+        *inodeId = par_id;
+        return Err_mknod;
+    }
+
+    Inode par_inode;
+    Inode inode;
+        
+    // read the parent inode
+    //ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode)    
+    if(getInode(fs, &par_id, &par_inode) == Success) {
+        printf("[Make Node] Error: fail to read parent directory inode %d\n", par_id);
+        return Err_mknod;
+    }
+    
+    //check for max_file_in_dir
+    if (par_inode.fileSize >= MAX_FILE_NUM_IN_DIR * sizeof(DirEntry)) {
+//        _err_last = _in_tooManyEntriesInDir;
+//        THROW(__FILE__, __LINE__, __func__);
+        return -ENOSPC;
+    }
+    
+    //check for long names
+    if (strlen(dir_name) > FILE_NAME_LENGTH) {
+//        _err_last = _in_fileNameTooLong;
+//        THROW(__FILE__, __LINE__, __func__);
+        return -ENAMETOOLONG;
+    }
+    
+    //allocate a free inode for the new file
+    //ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+    ErrorCode err_allocInode = allocInode(fs, &id , &inode);
+    if (err_allocInode != Success){
+    	printf("[Make Node] Error: fail to allocate an inode for the new directory!\n");
+    	return -EDQUOT;
+    }	
+	
+    // insert new file entry into parent directory list
+    DirEntry newEntry;
+    strcpy(newEntry.key, dir_name);
+    newEntry.inodeId = id;
+
+    addr_type offset;
+    for(offset = 0; offset < par_inode.fileSize; offset += sizeof(DirEntry)) {
+        // search parent directory table
+        DirEntry parEntry;
+        
+        size_type readbyte;
+        //ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte)
+        ErrorCode err_readInodeData = readInodeData(fs, &par_inode, (BYTE*) &parEntry, offset, sizeof(DirEntry), &readbyte);
+        if (err_readInodeData != Success){
+        	printf("[Make Node] Error: fail to read Inode Data!\n");
+        	return err_readInodeData;
+        }
+        
+        // empty directory entry found, overwrite it
+        if (parEntry.inodeId == -1){
+            break;
+        }
+    }
+    
+    size_type bytesWritten;
+    //ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
+    ErrorCode err_writeInodeData = writeInodeData(fs, &par_inode, (BYTE*) &newEntry, offset, sizeof(DirEntry), &bytesWritten);
+    if (err_writeInodeData != Success){
+    	printf("[Make Node] Error: fail to write Inode Data!\n");
+    	return err_writeInodeData;
+    }
+    
+    if(bytesWritten != sizeof(DirEntry)) {
+        printf("[Make Node] Error: failed to write new entry into parent directory!\n");
+        return Err_mknod;
+    }
+
+    // update parent directory file size, if it changed
+    if(offset + bytesWritten > par_inode.fileSize) {
+        par_inode.fileSize = offset + bytesWritten;
+        
+        //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+        ErrorCode err_putInode = putInode(fs, &par_id, &par_inode);
+        if (err_putInode != Success){
+        	printf("[Make Node] Error: failed to put Inode!\n");
+        }        
+    }
+	//TODO
+	//DO we need to include these in the inode?
+    //inode._in_uid = uid;
+    //inode._in_gid = gid;
+    
+    struct passwd *ppwd = getpwuid(uid);
+    strcpy(inode.fileOwner, ppwd->pw_name);
+	
+    // change the inode type to directory
+    inode.fileType = Regular;
+	
+	//TODO
+	//how t oset permission
+    // init the mode
+    //inode._in_permissions = S_IFREG | 0666;
+
+    // init link count
+    inode.numOfLinks = 1;
+
+    //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+    ErrorCode err_putInode = putInode(fs, &id, &inode);
+    if (err_putInode != Success){
+    	printf("[Make Node] Error: failed to put Inode!\n");
+    }
+    
+	*inodeId = id;
+    return Success;
+}
+

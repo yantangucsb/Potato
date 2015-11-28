@@ -8,16 +8,17 @@
 #include "sys/types.h"
 
 // mounts a filesystem from a device
-INT Potato_mount(FileSystem* fs);
+//ok
+ErrorCode Potato_mount(FileSystem* fs);
 
 // unmounts a filesystem into a device
-INT Potato_unmount(FileSystem* fs);
+ErrorCode Potato_unmount(FileSystem* fs);
 
 // makes a new file
-INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid);
+ErrorCode Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_type* inodeId);
 
 // deletes a file or directory
-INT Potato_unlink(FileSystem* fs, char* path);
+ErrorCode Potato_unlink(FileSystem* fs, char* path);
 
 // makes a new directory
 INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid);

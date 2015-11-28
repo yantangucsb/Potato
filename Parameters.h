@@ -9,6 +9,7 @@
 #include<stdint.h>
 
 typedef long size_type;
+typedef int64_t LONG;
 typedef uint32_t addr_type;
 typedef uint8_t BYTE;
 typedef int32_t INT;
@@ -26,8 +27,18 @@ typedef enum {
     Err_PutBlock = 9,
     Err_InodeFull = 10,
     NoFreeDataBlock = 11,
-    NotDirectory = 13,      //for namei
-    InodeNotExist = 14
+    NotDirectory = 12,      //for namei
+    InodeNotExist = 13,
+    Err_OpenDisk = 14, //for mount
+    Err_FailReadSuperblk = 15, //for mount
+    Err_mapDisk2SuperBlockinMem = 16, //for mount
+    Err_mapSuperBlockonDisk = 17, //for mount
+    Err_initOpenFileTable = 18, //for mount
+    Err_initInodeTable = 19, //for mount
+    Err_destroyDisk = 20, //for closefs
+    Err_mknod = 21, //for mknod
+    Err_unlink = 22, //for unlink
+    
 } ErrorCode;
 
 typedef enum {
@@ -62,6 +73,10 @@ typedef enum {
 //should be checked together with enum FilePermType
 #define PERMISSION_CAT_NUM 3
 #define DIRECT_BLOCK_NUM 10
+#define S_DIRECT_BLOCK_NUM 1
+#define D_DIRECT_BLOCK_NUM 1
+#define T_DIRECT_BLOCK_NUM 1
+
 
 #define PERCENT 20
 
@@ -69,4 +84,17 @@ typedef enum {
 #define TIME_LENGTH 32
 
 #define ROOT_INODE_ID 0
-#define FILE_PATH_LENGTH 512
+#define FILE_PATH_LENGTH 512 //maximum length of the path
+
+//disk partition path
+#define DISK_PATH "diskFile"
+
+#define MAX_FILE_SIZE (BLOCK_SIZE * DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE)
+#define MAX_FILE_BLKS (MAX_FILE_SIZE / BLOCK_SIZE) //max number of data blocks allocatable per file
+#define MAX_FILE_NUM_IN_DIR (MAX_FILE_SIZE / (FILE_NAME_LENGTH + sizeof(INT))) //maximum number of files in a directory
+
+
+
+
+
+

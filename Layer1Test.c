@@ -73,7 +73,9 @@ void testNamei(){
     }
     
     //test readInodeData
+    printf("[Read Inode Data] begin readinodedata test..\n");
     readInodeData(&fs, &inode, buf, 0, inode.fileSize, &readbyte);
+    printf("[Read Inode Data] readinodedata test successful!\n");
 
     cur_entry = (DirEntry*) buf;
     curSize = 0;
@@ -86,15 +88,16 @@ void testNamei(){
     free(buf);
 
     //test cases for namei
+    printf("[Namei] begin namei test..\n");
     if(Potato_namei(&fs, "/", &inode_id) != Success){
-        printf("Potato_namei failed for path /\n");
+        printf("[Namei] Potato_namei failed for path /\n");
     }
-    printf("root directory inode id: %ld\n", inode_id);
+    printf("[Namei] root directory inode id: %ld\n", inode_id);
     ErrorCode err = Potato_namei(&fs, "/hello/", &inode_id);
     if(err != Success){
-        printf("Potato_namei failed for path /hello/: err %d\n", err);
+        printf("[Namei] Potato_namei failed for path /hello/: err %d\n", err);
     }
-    printf("/hello/ direcotry inode id: %ld\n", inode_id);
+    printf("[Namei] /hello/ direcotry inode id: %ld\n", inode_id);
 }
 
 void testBmap(){

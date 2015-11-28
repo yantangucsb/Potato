@@ -1,6 +1,8 @@
 /*
  * Set up the file system
  * By Yan
+ * Modified by Peng
+ * +Adding closefs
  */
 
 #include <stdio.h>
@@ -97,6 +99,13 @@ ErrorCode readSuperBlock(FileSystem* fs){
     return Success;
 }
 
+ErrorCode closefs(FileSystem* fs) {
+    if (destroyDisk(&(fs->disk_emulator)) != Success){
+    	printf("[Close File System] Error: can not destroy disk\n");
+    	return Err_destroyDisk;
+    }
+    return Success;
+}
 
 void printFileSystem(FileSystem* fs){
     printf("-----Potato info-----\n");
