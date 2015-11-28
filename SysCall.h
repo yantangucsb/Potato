@@ -10,37 +10,32 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
 ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id);
 
 // mounts a filesystem from a device
-ErrorCode Potato_mount(FileSystem* fs);
+INT Potato_mount(FileSystem* fs);
 
 // unmounts a filesystem into a device
-ErrorCode Potato_unmount(FileSystem* fs);
+INT Potato_unmount(FileSystem* fs);
 
 // makes a new file
-ErrorCode Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_type* inodeId);
+INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid);
 
 // deletes a file or directory
-ErrorCode Potato_unlink(FileSystem* fs, char* path, size_type* inodeId);
+INT Potato_unlink(FileSystem* fs, char* path);
 
 // makes a new directory
-ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_type* inodeId);
+INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid);
 
 // reads directory contents
-ErrorCode Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry, size_type* inodeId);
+INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry);
 
 //change mode
 //TODO
 //no mode input
-ErrorCode Potato_chmod(FileSystem* fs, char* path, size_type* inodeId);
-
-
-
+INT Potato_chmod(FileSystem* fs, char* path);
 
 //by marco
 INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes);
 
 INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes);
-
-INT Potato_close(FileSystem* fs, char* path_name, FileOp flag);
 
 INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name);
 
