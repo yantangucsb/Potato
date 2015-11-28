@@ -109,8 +109,9 @@ void testNamei(){
     sec1_inode.fileSize = sizeof(sec1_entry);
     sec1_inode.directBlock[0] = sec1_blockId;
     putInode(&fs, &sec1_inodeId, &sec1_inode);
-/*    size_type readbyte;
-      
+
+    size_type readbyte;
+/*      
     //test if write successfully
     get(&fs, inode.directBlock[0] + fs.super_block.firstDataBlockId, buf);
     DirEntry* cur_entry = (DirEntry*) buf;
@@ -177,6 +178,11 @@ void testNamei(){
         printf("[Layer1Test] Potato_namei failed for path /hello/sec1/../..: err %d\n", err);
     }
     printf("[Layer1Test] /hello/sec1/../.. direcotry inode id: %ld\n", inode_id);
+    err = Potato_namei(&fs, "/hello/sec1/./..", &inode_id);
+    if(err != Success){
+        printf("[Layer1Test] Potato_namei failed for path /hello/sec1/./..: err %d\n", err);
+    }
+    printf("[Layer1Test] /hello/sec1/./.. direcotry inode id: %ld\n", inode_id);
 }
 
 void testBmap(){
