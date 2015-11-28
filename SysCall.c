@@ -560,7 +560,7 @@ INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     // read the parent inode
     //ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode)    
     if(getInode(fs, &par_id, &par_inode) == Success) {
-        printf("[Make Node] Error: fail to read parent directory inode %d\n", par_id);
+        printf("[Make Node] Error: fail to read parent directory inode %ld\n", par_id);
         //return Err_mknod;
         return -1;
     }
@@ -727,7 +727,7 @@ INT Potato_unlink(FileSystem* fs, char* path){
     // read the parent inode
     //ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode)    
     if(getInode(fs, &par_id, &par_inode) == Success) {
-        printf("[Unlink] Error: fail to read parent directory inode %d\n", par_id);
+        printf("[Unlink] Error: fail to read parent directory inode %ld\n", par_id);
         //return Err_unlink;
         return -1;
     }
@@ -736,7 +736,7 @@ INT Potato_unlink(FileSystem* fs, char* path){
     // read the file inode
     //ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode)    
     if(getInode(fs, &id, &inode) == Success) {
-        printf("[Unlink] Error: fail to read to-be-unlinked file inode %d\n", par_id);
+        printf("[Unlink] Error: fail to read to-be-unlinked file inode %ld\n", par_id);
         //return Err_unlink;
         return -1;
     }    
@@ -813,7 +813,7 @@ INT Potato_unlink(FileSystem* fs, char* path){
     	}
     }
     else {
-        printf("Potato_unlink found inode %d for file %s in inode table, waiting for close before freeing\n", id, path);
+        printf("Potato_unlink found inode %ld for file %s in inode table, waiting for close before freeing\n", id, path);
     }	
 	
     //remove the inode from the parent directory
@@ -911,7 +911,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     
     // find the inode id of the parent directory
     Potato_namei(fs, par_path, &par_id);
-    printf("[mkdir] Potato_mkdir found parent directory inode id: %d\n", par_id);
+    printf("[mkdir] Potato_mkdir found parent directory inode id: %ld\n", par_id);
 
     // check if the parent directory exists
     if(par_id < 0) {
@@ -930,7 +930,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
 	// read the parent inode
 	//readINode(fs, par_id, &par_inode) == -1
     if(getInode(fs, &par_id, &par_inode) != Success){
-        printf("[mkdir] Error: fail to read parent directory inode %d\n", par_id);
+        printf("[mkdir] Error: fail to read parent directory inode %ld\n", par_id);
         //return Err_GetInode;
         return -1;
     }
@@ -956,7 +956,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     	printf("[mkdir] Error: fail to allocate an inode for the new directory!\n");
     	return -EDQUOT;
     }
-    printf("[mkdir] Potato_mkdir allocated inode id %d for directory %s\n", id, dir_name);
+    printf("[mkdir] Potato_mkdir allocated inode id %ld for directory %s\n", id, dir_name);
 
     // insert new directory entry into parent directory list
     DirEntry newEntry;
@@ -979,7 +979,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
 		}
         
         printf("[mkdir] the dir name of this entry is %s\n", parEntry.key);
-        printf("[mkdir] the inode id of this entry is %d\n", parEntry.inodeId);
+        printf("[mkdir] the inode id of this entry is %ld\n", parEntry.inodeId);
         
         // empty directory entry found, overwrite it
         if (parEntry.inodeId == -1){
@@ -988,7 +988,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     }
 
     if(offset < par_inode.fileSize){
-        printf("[mkdir] mkdir inserting new entry into parent directory at index %d\n", offset / sizeof(DirEntry));
+        printf("[mkdir] mkdir inserting new entry into parent directory at index %ld\n", offset / sizeof(DirEntry));
     }
     else {
         printf("[mkdir] mkdir appending new entry to parent directory at offset %d\n", offset);
@@ -1092,7 +1092,7 @@ INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
         
         //readINode(fs, id, &i_node) == -1
 		if(getInode(fs, &id, &i_node) != Success){
-		    printf("[Readdir] Error: fail to read directory inode %d\n", id);
+		    printf("[Readdir] Error: fail to read directory inode %ld\n", id);
 		    //return Err_readdir;
 		    return -1;
 		}
@@ -1108,7 +1108,7 @@ INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
 			return -1;
 		}
 
-		printf("[Readdir] %d entries in cur dir %s, reading %u\n", numDirEntry, path, offset);
+		printf("[Readdir] %d entries in cur dir %s, reading %ld\n", numDirEntry, path, offset);
 		
         // read the directory table
         //readINodeData(fs, &i_node, (BYTE *)curEntry, (LONG)(offset * sizeof(DirEntry)), (LONG)sizeof(DirEntry));
