@@ -78,4 +78,25 @@ ErrorCode hasINodeEntry(InodeTable* inode_table, size_type inode_id)
 	return Err_hasINodeEntry;
 }
 
+ErrorCode removeOpenFileEntry(OpenFileTable* open_file_table, char* path_name) {
+    OpenFileEntry* prev_entry = NULL;
+    OpenFIleEntry* cur_entry = open_file_table->head;
+    while(cur_entry != NULL){
+        if(strcmp(cur_entry->filePath, path_name) == 0) {
+            if(prev_entry == NULL) {
+                open_file_table->head = cur_entry->next;
+            }
+            else {
+                prev_entry->next = cur_entry->next;
+            }
+            free(cur_entry);
+            open_file_table->nOpenFiles--;
+            return Success;
+        }
+        prev_entry = cur_entry;
+        cur_entry = cur_entry->next;
+    }
+    printf("Error: open file entry not found!\n");
+    return NoFreeDataBlock; // need to assign a new enum entry, however, it works anyway.
+}
 

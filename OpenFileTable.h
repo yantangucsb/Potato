@@ -59,7 +59,7 @@ ErrorCode addInodeEntry(InodeTable* inode_table, size_type inode_id, Inode* inod
 
 ErrorCode hasINodeEntry(InodeTable* inode_table, size_type inode_id);
 
-
+ErrorCode removeOpenFileEntry(OpenFileTable* open_file_table, char* path_name);
 
 
 

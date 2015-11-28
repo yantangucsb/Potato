@@ -39,6 +39,9 @@ INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, s
 
 INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name);
 
+INT Potato_close(FileSystem* fs, char* path_name, FileOp flag);
+
+INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen);
 /*
  * open file
  * @flag: type of open, reading or writing, @modes give file permissions if the file is being created

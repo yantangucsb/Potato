@@ -1215,15 +1215,6 @@ INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, s
     Inode*      cur_inode       = &(file_entry->inodeEntry->inode);
 
     size_type data_size;
-    
-    
-    
-    
-    
-    
-    
-    
-    
     //writeInodeData(fs, cur_inode, buf, offset, numBytes, &data_size);
 	//ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
 	ErrorCode err_writeInodeData = writeInodeData(fs, cur_inode, buf, offset, numBytes, &data_size);
@@ -1372,5 +1363,84 @@ INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
 }
 
 
+INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
+    //retrieve open file entry
+    OpenFileEntry* file_entry;
+    ErrorCode err = getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+    if(NULL == file_entry) {
+        printf("Error: no such file found in the open file table.\n");
+        return 1;
+    }
+    else if(file_entry->fileOp != flag){
+        printf("Close File Error: %s authorization mismatch\n", path_name);
+        return -1;
+    }
+    InodeEntry* inode_entry = file_entry->inodeEntry;
+    assert(inode_entry->ref > 0);
+    inode_entry->ref--;
+    // remove the entry if opcount reaches 0
+    if(inode_entry->ref == 0) {
+        err = removeOpenFileEntry(&(fs->open_file_table), path_name);
+        assert(err == Success);
+        //CAUTION: if the number of link is 0, no ops here.
+    }
+    return 0;
+}
 
+INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen) {
+    
+    ErrorCode err = Success;
+    // use namei to find the inode by the path name
+    size_type inode_id;
+    Inode*    cur_inode;
+    err = Potato_namei(fs, path_name, &inode_id);
+    if(inode_id < 0){
+        printf("No such file\n"); // CAUTION: temporarily no error handling
+        return inode_id;
+    }
 
+    err = getInode(fs, &inode_id, cur_inode);
+    if(err != Success){
+        printf("%s: Error to read the file inode\n", path_name);
+        return -1;
+    }
+    
+    if(newLen > cur_inode->fileSize) {
+        // do nothing
+    }
+    else if (newLen == cur_inode->fileSize) {
+        // do nothing
+    }
+    else {
+        // len - bytes to be truncated
+        size_type len = cur_inode->fileSize - newLen;
+        
+        size_type file_block_id = (cur_inode->fileSize - 1 + BLOCK_SIZE) / BLOCK_SIZE - 1;
+
+        if((newLen - 1 + BLOCK_SIZE) / BLOCK_SIZE == (cur_inode->fileSize - 1 + BLOCK_SIZE) / BLOCK_SIZE) {
+            len = 0;
+        }
+        else {
+            len -= cur_inode->fileSize - file_block_id * BLOCK_SIZE;
+            bfree(fs, &cur_inode, file_block_id); // TODO: TO BE DONE
+            file_block_id--;
+
+        }
+
+        while(len > 0 && file_block_id >= 0) {
+        	if(len < BLOCK_SIZE) {
+        		len = 0;
+        	} else {
+        		bfree(fs, &cur_inode, file_block_id);
+        		len -= BLOCK_SIZE;
+        		file_block_id--;
+        	}
+
+        }
+    }
+    cur_inode->fileSize = newLen;
+    err = putInode(fs, &inode_id, cur_inode);
+    assert(err == Success);
+
+    return 0;
+}
