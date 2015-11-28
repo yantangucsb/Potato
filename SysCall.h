@@ -34,6 +34,16 @@ ErrorCode Potato_chmod(FileSystem* fs, char* path, size_type* inodeId);
 
 
 
+
+//by marco
+INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes);
+
+INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes);
+
+INT Potato_close(FileSystem* fs, char* path_name, FileOp flag);
+
+INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name);
+
 /*
  * open file
  * @flag: type of open, reading or writing, @modes give file permissions if the file is being created

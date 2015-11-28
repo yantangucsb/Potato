@@ -990,3 +990,234 @@ ErrorCode Potato_chmod(FileSystem* fs, char* path, size_type* inodeId){
 }
 
 
+INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes){
+
+    // look up open file table for an open file entry
+    ErrorCode err = Success;
+    OpenFileEntry* file_entry;
+    getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+    if(file_entry == NULL || (file_entry->fileOp != READ && file_entry->fileOp != READWRITE)) {
+        printf("%s: file read access denied!\n", path_name);
+        return -1;
+    }
+
+    // retrieve inode by the open file entry
+    size_type   cur_inode_id  = file_entry->inodeEntry->id;
+    Inode*      cur_inode     = &(file_entry->inodeEntry->inode);
+
+    // record access time
+    int t_access = time(NULL);
+    sprintf(cur_inode->fileAccessTime, "%d", t_access);
+
+    size_type data_size;
+    err = readInodeData(fs, cur_inode, buf, offset, numBytes, &data_size);
+    assert(err == Success);
+
+    err = putInode(fs, &cur_inode_id, cur_inode);
+    assert(err == Success);
+
+    return data_size;
+}
+
+
+INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes) {
+    ErrorCode err = Success;
+    OpenFileEntry* file_entry;
+    getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+    if(file_entry == NULL || (file_entry->fileOp != WRITE && file_entry->fileOp != READWRITE)) {
+        printf("%s: file write access denied!\n", path_name);
+        return -1;
+    }
+
+    size_type   cur_inode_id    = file_entry->inodeEntry->id;
+    Inode*      cur_inode       = &(file_entry->inodeEntry->inode);
+
+    size_type data_size;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //writeInodeData(fs, cur_inode, buf, offset, numBytes, &data_size);
+	//ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
+	ErrorCode err_writeInodeData = writeInodeData(fs, cur_inode, buf, offset, numBytes, &data_size);
+	if (err_writeInodeData != Success){
+		printf("Error: failed to write new entry into parent directory!\n");
+		return -1;
+	}	
+    
+
+    // modify the inode to change file size information
+    if(offset + data_size > cur_inode->fileSize) {
+        cur_inode->fileSize = offset + data_size;
+    }
+
+    int t_modified = time(NULL);
+    sprintf(cur_inode->fileModifiedTime, "%d", t_modified);
+    sprintf(cur_inode->inodeModifiedTime, "%d", t_modified);
+
+    err = putInode(fs, &cur_inode_id, cur_inode);
+    assert(err == Success);
+    
+    return data_size;
+}
+
+
+INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
+
+	//retrieve open file entry
+	OpenFileEntry* file_entry;
+	ErrorCode err = getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+	if(NULL == file_entry) {
+		printf("Error: no such file found in the open file table.\n");
+		return 1;
+	}
+	else if(file_entry->fileOp != flag){
+		printf("Close File Error: %s authorization mismatch\n", path_name);
+		return -1;
+	}
+
+	InodeEntry* inode_entry = file_entry->inodeEntry;
+	assert(inode_entry->ref > 0);
+
+	inode_entry->ref--;
+	INT opcount = removeOpenFileOperation(file_entry, flag); //TODO: removeOpenFileOperation
+	assert(opcount == inode_entry->ref);
+
+	// remove the entry if opcount reaches 0
+	if(opcount == 0) {
+		err = removeOpenFileEntry(&(fs->open_file_table), path_name);
+		assert(err == Success);
+
+		//CAUTION: if the number of link is 0, no ops here.
+	}
+
+	return 0;
+}
+
+INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
+
+	// update the open file table
+	ErrorCode err;
+	OpenFileEntry* file_entry;
+	err = getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+
+	if(file_entry != NULL){
+		strcpy(file_entry->filePath, new_path_name);
+	}
+
+	size_type parent_id, new_parent_id;
+	char parent_path[FILE_PATH_LENGTH];
+	char new_parent_path[FILE_PATH_LENGTH];
+	char *ptr;
+	char *new_ptr;
+	int  ch = '/';
+
+	// search the original parent path
+	ptr = strrchr(path_name, ch);
+	strncpy(parent_path, path_name, strlen(path_name) - strlen(ptr));
+	parent_path[strlen(path_name) - strlen(ptr)] = '\0';
+
+	// the case for root
+	if(strcmp(parent_path, "") == 0) {
+		strcpy(parent_path, "/");
+	}
+
+	// ptr <- "/node_name"
+	char* node_name = strtok(ptr, "/");
+
+	Potato_namei(fs, parent_path, &parent_id);
+	if(parent_id == -1){ // CAUTION: need to check the return value of namei
+		printf("Error: fail to read old parent dir\n");
+		return -1;
+	}
+
+	Inode* parent_node;
+	err = getInode(fs, &parent_id, parent_node);
+
+	assert(err == Success);
+
+	size_type node_id = 0;
+	for(size_type i = 0; i < parent_node->fileSize; i += sizeof(DirEntry)){
+		DirEntry entry;
+		size_type tmp;
+		readInodeData(fs, parent_node, (BYTE*)&entry, i, sizeof(DirEntry), &tmp);
+
+		if(strcmp(entry.key, node_name) == 0) {
+			node_id = entry.inodeId;
+			strcpy(entry.key, "");
+			entry.inodeId = -1;
+
+			// update the parent directory table
+			//writeInodeData(fs, parent_node, (size_type*)&entry, i, sizeof(DirEntry), &tmp);
+			//ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
+			ErrorCode err_writeInodeData = writeInodeData(fs, parent_node, (size_type*)&entry, i, sizeof(DirEntry), &tmp);
+			if (err_writeInodeData != Success){
+				printf("Error: failed to write new entry into parent directory!\n");
+				return -1;
+			}
+		}
+	}
+
+	new_ptr = strrchr(new_path_name, ch);
+	strncpy(new_parent_path, new_path_name, strlen(new_path_name) - strlen(new_ptr));
+	new_parent_path[strlen(new_path_name) - strlen(new_ptr)] = '\0';
+
+	// new_ptr = "/new_node_name"
+	char * new_node_name = strtok(new_ptr, "/");
+
+	if(strcmp(new_parent_path, "") == 0) {
+		strcpy(new_parent_path, "/");
+	}
+
+	Potato_namei(fs, new_parent_path, &new_parent_id);
+	Inode* new_parent_node;
+	err = getInode(fs, &new_parent_id, new_parent_node);
+	assert(err == Success);
+
+	DirEntry new_entry;
+	strcpy(new_entry.key, new_node_name);
+	new_entry.inodeId = node_id;
+
+	size_type entry_index;
+	for(entry_index = 0; entry_index < new_parent_node->fileSize; entry_index += sizeof(DirEntry)){
+		DirEntry parent_entry;
+		size_type tmp;
+		readInodeData(fs, new_parent_node, (BYTE*)&parent_entry, entry_index, sizeof(DirEntry), &tmp);
+
+		if(parent_entry.inodeId == -1){ // CAUTION: -1 stands for empty node
+			break;
+		}
+	}
+
+	size_type bytes_written;
+	
+	//writeInodeData(fs, new_parent_node, (BYTE*)&new_entry, entry_index, sizeof(DirEntry), &bytes_written);
+	//ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
+	ErrorCode err_writeInodeData = writeInodeData(fs, new_parent_node, (BYTE*)&new_entry, entry_index, sizeof(DirEntry), &bytes_written);
+	if (err_writeInodeData != Success){
+		printf("Error: failed to write new entry into parent directory!\n");
+		return -1;
+	}		
+				
+				
+	if(bytes_written != sizeof(DirEntry)) {
+		printf("Error: parent dir entry write failed!\n");
+		return -1;
+	}
+
+	if(entry_index + bytes_written > new_parent_node->fileSize) {
+		new_parent_node->fileSize = entry_index + bytes_written;
+		//putInode(fs, *new_parent_id, new_parent_node);
+	}
+
+	putInode(fs, &new_parent_id, new_parent_node);
+
+	return 0;
+}
+
+
