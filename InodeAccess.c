@@ -423,9 +423,10 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     	//defined in Syscall.c
     	
     	ErrorCode err_readinodedata = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
+        printf("cur start block: %ld, offset: %ld\n", block_no, block_offset);
     	if (err_readinodedata == Success){    	    	
     		//get() is defined in FileSystem.c
-    		ErrorCode err_get = get(fs, block_no, data_block_buffer);
+    		ErrorCode err_get = get(fs, block_no + fs->super_block.firstDataBlockId, data_block_buffer);
     		if (err_get == Success){
     			if ((end-start+1)>=BLOCK_SIZE){
     				if (flag == 0){
@@ -453,7 +454,18 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     				if (flag == 0){
     					//the first chunk
     					memcpy(data_out_pt, &data_pt[block_offset], end-start+1);
-    					//update start position (quit while)
+    					/*
+                        //test if copy corretly for directory only - Yan 
+                        DirEntry* entry = (DirEntry*) &data_pt[block_offset];
+                        size_type entry_size = 0;
+                        while(entry_size<end+start+1){
+                            printf("cur dir entry name: %s, inode id: %ld", entry->key, entry->inodeId);
+                            entry++;
+                            entry_size+=sizeof(DirEntry);
+                        }
+                        */
+
+                        //update start position (quit while)
     					start = start + BLOCK_SIZE;
     				}
     				if (flag == 1){

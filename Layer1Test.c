@@ -61,23 +61,23 @@ void testNamei(){
     //write root directory to disk
     putInode(&fs, &inode_id, &inode);
     size_type readbyte;
-    
+    free(buf);
     //test if write successfully
-    get(&fs, inode.directBlock[0] + fs.super_block.firstDataBlockId, buf);
-    DirEntry* cur_entry = (DirEntry*) buf;
+    BYTE* out_buf = malloc(BLOCK_SIZE);
+    get(&fs, inode.directBlock[0] + fs.super_block.firstDataBlockId, out_buf);
+    DirEntry* cur_entry = (DirEntry*) out_buf;
     size_type curSize = 0;
     while(curSize < inode.fileSize){
         printf("dir entry name: %s, inode id: %ld\n", cur_entry->key, cur_entry->inodeId);
         cur_entry++;
         curSize += sizeof(DirEntry);
     }
-    
     //test readInodeData
     printf("[Read Inode Data] begin readinodedata test..\n");
-    readInodeData(&fs, &inode, buf, 0, inode.fileSize, &readbyte);
+    readInodeData(&fs, &inode, out_buf, 0, inode.fileSize, &readbyte);
     printf("[Read Inode Data] readinodedata test successful!\n");
 
-    cur_entry = (DirEntry*) buf;
+    cur_entry = (DirEntry*) out_buf;
     curSize = 0;
     while(curSize < inode.fileSize){
         printf("dir entry name: %s, inode id: %ld\n", cur_entry->key, cur_entry->inodeId);
@@ -85,7 +85,7 @@ void testNamei(){
         curSize += sizeof(DirEntry);
     }
 
-    free(buf);
+    free(out_buf);
 
     //test cases for namei
     printf("[Namei] begin namei test..\n");
