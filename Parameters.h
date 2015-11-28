@@ -52,7 +52,8 @@ typedef enum {
 
 typedef enum {
     Regular = 0,
-    Directory = 1//,
+    Directory = 1,
+    Initialization = 2
 //    CharactorDeviceFile = 2,
 //    BlockDeviceFile = 3,
 //    LocalSocketFile = 4,
@@ -92,7 +93,7 @@ typedef enum {
 //disk partition path
 #define DISK_PATH "diskFile"
 
-#define MAX_FILE_SIZE (BLOCK_SIZE * DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE)
+#define MAX_FILE_SIZE (BLOCK_SIZE * DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE * S_DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE * D_DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE * T_DIRECT_BLOCK_NUM)
 #define MAX_FILE_BLKS (MAX_FILE_SIZE / BLOCK_SIZE) //max number of data blocks allocatable per file
 #define MAX_FILE_NUM_IN_DIR (MAX_FILE_SIZE / (FILE_NAME_LENGTH + sizeof(INT))) //maximum number of files in a directory
 

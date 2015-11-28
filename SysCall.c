@@ -295,28 +295,29 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
     return Success;
 }
 
-bool checkPermission(bool* permission, FileOp flag){
+bool checkPermission(uint32_t permission, FileOp flag){
+	//owner's permission check
     if(flag == READ){
-        if(*permission == false)
+        if((permission/100)/4 == 0)
             return false;
     }else if(flag == WRITE || flag == TRUNCATE || flag == APPEND){
-        if(*(permission+1) == false)
+        if(((permission/100)%4)/2 == 0)
             return false;
     }else{
-        if(*permission == false || *(permission+1) == false)
+        if((permission/100)/4 == 0 || ((permission/100)%4)/2 == 0)
             return false;
     }
     return true;
 }
 
-INT Potato_open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
+INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
     //check if the file is already open
     OpenFileEntry* file_entry = NULL;
     getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
 
     //if the file is open
     if(file_entry != NULL && file_entry->fileOp == flag){
-        if(checkPermission(file_entry->inodeEntry->inode.ownerPermission, flag) == false){
+        if(checkPermission(file_entry->inodeEntry->inode.Permission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
@@ -326,7 +327,7 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     
     //if the file is open but operation is different
     if(file_entry != NULL){
-        if(checkPermission(file_entry->inodeEntry->inode.ownerPermission, flag) == false){
+        if(checkPermission(file_entry->inodeEntry->inode.Permission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
@@ -354,7 +355,7 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
     InodeEntry* inode_entry = NULL;
     getInodeEntry(&(fs->inode_table), inode_id, inode_entry);
     if(inode_entry != NULL){
-        if(checkPermission(inode_entry->inode.ownerPermission, flag) == false){
+        if(checkPermission(inode_entry->inode.Permission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
@@ -369,7 +370,7 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag, mode_t modes) {
         return -1;
     }
     //check permission
-    if(checkPermission(inode.ownerPermission, flag) == false){
+    if(checkPermission(inode.Permission, flag) == false){
         printf("%s: Not enough authority to open the file", path_name);
         return -1;
     }
@@ -637,10 +638,9 @@ INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
         	return -1;
         }        
     }
-	//TODO
-	//DO we need to include these in the inode?
-    //inode._in_uid = uid;
-    //inode._in_gid = gid;
+	
+    inode._in_uid = uid;
+    inode._in_gid = gid;
     
     struct passwd *ppwd = getpwuid(uid);
     strcpy(inode.fileOwner, ppwd->pw_name);
@@ -648,10 +648,7 @@ INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     // change the inode type to directory
     inode.fileType = Regular;
 	
-	//TODO
-	//how t oset permission
-    // init the mode
-    //inode._in_permissions = S_IFREG | 0666;
+    inode.Permission = S_IFREG | 0666;
 
     // init link count
     inode.numOfLinks = 1;
@@ -1053,10 +1050,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     struct passwd *ppwd = getpwuid(uid);
     strcpy(inode.fileOwner, ppwd->pw_name);
 	
-	//TODO
-	// how to initialize permission?
-    // init the mode
-    //inode._in_permissions = S_IFDIR | 0755;
+    inode.Permission = S_IFDIR | 0755;
 
     // init link count
     inode.numOfLinks = 1;
@@ -1132,7 +1126,7 @@ INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
 //TODO
 //MODE???
 //change mode
-INT Potato_chmod(FileSystem* fs, char* path){
+INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
 	//1. resolve path
     size_type INode_ID;
     //l2_namei(fs, path);
@@ -1156,9 +1150,7 @@ INT Potato_chmod(FileSystem* fs, char* path){
     //2. check uid/gid
     //3. set mode
     
-    //TODO
-    //HOWTO set permission
-    //curINode._in_permissions = mode;
+    curINode.Permission = set_permission;
 
 
     //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)

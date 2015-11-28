@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "Directories.h"
+#include "SysCall.h"
 #define NUM_SUB_DIR 2
 
 void printMenu();

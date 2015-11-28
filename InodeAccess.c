@@ -257,24 +257,14 @@ ErrorCode InitInode(Inode* inode){
 	//WARNING: the caller should define an Inode and use the pointer of that Inode as input to this function
 	//If successful, Inode* inode will be initialized
 	inode->used=true;
+	inode->fileType=Initialization;
+	strcpy (inode->fileOwner, "NULL");
+	inode->Permission=777;
+	inode->numOfLinks = 0;
+	inode->numOfLinks = 0;
+	inode->numOfLinks=0;
+	inode->fileSize=0;
 	
-	char str[]="default";
-	strcpy (inode->fileOwner, str);
-	strcpy (inode->OwnerGroup, str);
-	
-	//permission 2-read 1-write 0-exe
-	inode->ownerPermission[0]=true;
-	inode->ownerPermission[1]=true;
-	inode->ownerPermission[2]=true;
-	
-/*	inode->groupPermission[0]=true;
-	inode->groupPermission[1]=false;
-	inode->groupPermission[2]=true;
-	
-	inode->otherPermission[0]=false;
-	inode->otherPermission[1]=false;
-	inode->otherPermission[2]=true;
-*/
 	//time initialization
 	time_t current_time;
 	char* c_time_string;
@@ -289,19 +279,17 @@ ErrorCode InitInode(Inode* inode){
         printf("[Initialize Inode] Failure to convert the current time.\n");
         return Err_InitInode;
     }
-    
     strcpy (inode->fileModifiedTime, c_time_string);
     strcpy (inode->fileAccessTime, c_time_string);
     strcpy (inode->inodeModifiedTime, c_time_string);
-    
-	inode->numOfLinks = 0;
 	
 	int i=0;
 	for (i=0;i<DIRECT_BLOCK_NUM;i++)
-		inode->directBlock[i]=0;
-	inode->singleBlock=0;
-	inode->doubleBlock=0;
-	inode->tripleBlock=0;
+		inode->directBlock[i]=-1;
+	inode->singleBlock=-1;
+	inode->doubleBlock=-1;
+	inode->tripleBlock=-1;
+	
 	printf("[Initialize Inode] Initialize Inode Successful :)\n");
 	return Success;
 }
