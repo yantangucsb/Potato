@@ -21,8 +21,19 @@ ErrorCode Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_ty
 // deletes a file or directory
 ErrorCode Potato_unlink(FileSystem* fs, char* path, size_type* inodeId);
 
-// deletes a file or directory
-ErrorCode Potato_unlink(FileSystem* fs, char* path, size_type* inodeId);
+// makes a new directory
+ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_type* inodeId);
+
+// reads directory contents
+ErrorCode Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry, size_type* inodeId);
+
+//change mode
+//TODO
+//no mode input
+ErrorCode Potato_chmod(FileSystem* fs, char* path, size_type* inodeId);
+
+
+
 /*
  * open file
  * @flag: type of open, reading or writing, @modes give file permissions if the file is being created

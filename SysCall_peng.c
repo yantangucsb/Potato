@@ -250,7 +250,7 @@ ErrorCode Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_ty
         ErrorCode err_putInode = putInode(fs, &par_id, &par_inode);
         if (err_putInode != Success){
         	fprintf("[Make Node] Error: failed to put Inode!\n");
-        }        
+        }
     }
 	//TODO
 	//DO we need to include these in the inode?
@@ -475,26 +475,29 @@ ErrorCode Potato_unlink(FileSystem* fs, char* path, size_type* inodeId){
 
 
 // makes a new directory
-ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
+ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid, size_type* inodeId){
     printf("Potato_mkdir called for path: %s\n", path);
     
-    LONG id; // the inode id associated with the new directory
-    LONG par_id; // the inode id of the parent directory
-    char par_path[MAX_PATH_LEN];
+    size_type id; // the inode id associated with the new directory
+    size_type par_id; // the inode id of the parent directory
+    char par_path[FILE_PATH_LENGTH];
 
     //check if the directory already exist
     if (strcmp(path, "/") == 0) {
-        fprintf(stderr, "Error: cannot create root directory outside of initfs!\n");
-        return -1;
+        printf("[mkdir] Error: cannot create root directory outside of initfs!\n");
+        return Err_mkdir;
     }
-    LONG rRes = l2_namei(fs, path);
+	
+    size_type rRes;
+    Potato_namei(fs, path, &rRes);
+    
     if (rRes == -ENOTDIR) {
-        _err_last = _fs_NonDirInPath;
-        THROW(__FILE__, __LINE__, __func__);
+//        _err_last = _fs_NonDirInPath;
+//        THROW(__FILE__, __LINE__, __func__);
         return -ENOTDIR;
     }
     if (rRes > 0) {
-        fprintf(stderr, "Error: file or directory %s already exists!\n", path);
+        printf("[mkdir] Error: file or directory %s already exists!\n", path);
         return -EEXIST;
     }
 
@@ -516,90 +519,104 @@ ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     }
     
     // find the inode id of the parent directory
-    par_id = l2_namei(fs, par_path);
-    #ifdef DEBUG_VERBOSE
-    printf("l2_mkdir found parent directory inode id: %d\n", par_id);
-    #endif
+    Potato_namei(fs, par_path, &par_id);
+    printf("[mkdir] Potato_mkdir found parent directory inode id: %d\n", par_id);
 
     // check if the parent directory exists
     if(par_id < 0) {
-	_err_last = _fs_NonExistFile;
-	THROW(__FILE__, __LINE__, __func__);
-        return par_id;
+//	_err_last = _fs_NonExistFile;
+//	THROW(__FILE__, __LINE__, __func__);
+		printf("[mkdir] Directory %s not found!\n", par_path);
+		*inodeId = par_id;
+        return Err_mkdir;
     }
 
-    INode par_inode;
-    INode inode;
-
-    // read the parent inode
-    if(readINode(fs, par_id, &par_inode) == -1) {
-        fprintf(stderr, "fail to read parent directory inode %d\n", par_id);
-        return -1;
+    Inode par_inode;
+    Inode inode;
+    
+    
+	// read the parent inode
+	//readINode(fs, par_id, &par_inode) == -1
+    if(getInode(fs, &par_id, &par_inode) != Success){
+        printf("[mkdir] Error: fail to read parent directory inode %d\n", par_id);
+        return Err_GetInode;
     }
-  
-    //weilong: check for max_file_in_dir
-    if (par_inode._in_filesize >= MAX_FILE_NUM_IN_DIR * sizeof(DirEntry)) {
-	_err_last = _in_tooManyEntriesInDir;
-	THROW(__FILE__, __LINE__, __func__);
+    
+    //check for max_file_in_dir
+    if (par_inode.fileSize >= MAX_FILE_NUM_IN_DIR * sizeof(DirEntry)) {
+//	_err_last = _in_tooManyEntriesInDir;
+//	THROW(__FILE__, __LINE__, __func__);
 	return -ENOSPC;
     }
 
 
     if (strlen(dir_name) > FILE_NAME_LENGTH) {
-	_err_last = _in_fileNameTooLong;
-	THROW(__FILE__, __LINE__, __func__);
+//	_err_last = _in_fileNameTooLong;
+//	THROW(__FILE__, __LINE__, __func__);
 	return -ENAMETOOLONG;
     }
- 
+	
     // allocate a free inode for the new directory 
-    id = allocINode(fs, &inode); 
-    #ifdef DEBUG_VERBOSE
-    printf("l2_mkdir allocated inode id %d for directory %s\n", id, dir_name);
-    #endif
-    if(id == -1) {
-        fprintf(stderr, "Error: failed to allocate an inode for the new directory!\n");
-        return -EDQUOT;
+    //ErrorCode allocInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+    ErrorCode err_allocInode = allocInode(fs, &id , &inode);
+    if (err_allocInode != Success){
+    	printf("[mkdir] Error: fail to allocate an inode for the new directory!\n");
+    	return -EDQUOT;
     }
+    printf("[mkdir] Potato_mkdir allocated inode id %d for directory %s\n", id, dir_name);
 
     // insert new directory entry into parent directory list
     DirEntry newEntry;
     strcpy(newEntry.key, dir_name);
-    newEntry.INodeID = id;
-
-    UINT offset;
-    for(offset = 0; offset < par_inode._in_filesize; offset += sizeof(DirEntry)) {
+    newEntry.inodeId = id;
+	
+    uint32_t offset;
+    for(offset = 0; offset < par_inode.fileSize; offset += sizeof(DirEntry)) {
         // search parent directory table
         DirEntry parEntry;
-        readINodeData(fs, &par_inode, (BYTE*) &parEntry, offset, sizeof(DirEntry));
-        #ifdef DEBUG_DCACHE
-        printf("the dir name of this entry is %s\n", parEntry.key);
-        printf("the inode id of this entry is %d\n", parEntry.INodeID);
-        #endif
+        
+		size_type readbyte;
+		//ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte)
+		//readINodeData(fs, &par_inode, (BYTE*) &parEntry, offset, sizeof(DirEntry));
+		ErrorCode err_readInodeData = readInodeData(fs, &par_inode, (BYTE*) &parEntry, offset, sizeof(DirEntry), &readbyte);
+		if (err_readInodeData != Success){
+			printf("[Unlink] Error: fail to read Inode Data!\n");
+		  	return err_readInodeData;
+		}
+        
+        printf("[mkdir] the dir name of this entry is %s\n", parEntry.key);
+        printf("[mkdir] the inode id of this entry is %d\n", parEntry.inodeId);
         
         // empty directory entry found, overwrite it
-        if (parEntry.INodeID == -1){
+        if (parEntry.inodeId == -1){
             break;
         }
     }
-    
-    #ifdef DEBUG_VERBOSE
-    if(offset < par_inode._in_filesize) {
-        printf("l2_mkdir inserting new entry into parent directory at index %d\n", offset / sizeof(DirEntry));
+
+    if(offset < par_inode.fileSize) {
+        printf("[mkdir] mkdir inserting new entry into parent directory at index %d\n", offset / sizeof(DirEntry));
     }
     else {
-        printf("l2_mkdir appending new entry to parent directory at offset %d\n", offset);
-    }
-    #endif
-    LONG bytesWritten = writeINodeData(fs, &par_inode, (BYTE*) &newEntry, offset, sizeof(DirEntry));
-    if(bytesWritten != sizeof(DirEntry)) {
-        fprintf(stderr, "Error: failed to write new entry into parent directory!\n");
-        return -1;
+        printf("[mkdir] mkdir appending new entry to parent directory at offset %d\n", offset);
     }
 
-    // update parent directory file size, if it changed
-    if(offset + bytesWritten > par_inode._in_filesize) {
-        par_inode._in_filesize = offset + bytesWritten;
-        writeINode(fs, par_id, &par_inode);
+	//writeINodeData(fs, &par_inode, (BYTE*) &newEntry, offset, sizeof(DirEntry));
+	size_type bytesWritten;
+	//ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
+	err_writeInodeData = writeInodeData(fs, &par_inode, (BYTE*) &newEntry, offset, sizeof(DirEntry), &bytesWritten);
+	if (err_writeInodeData != Success){
+		printf("[Unlink] Error: failed to write new entry into parent directory!\n");
+		return err_writeInodeData;
+	}
+	
+	// update parent directory file size, if it changed
+    if(offset + bytesWritten > par_inode.fileSize) {
+        par_inode.fileSize = offset + bytesWritten;
+        //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+        //writeINode(fs, par_id, &par_inode);
+        ErrorCode err_putInode = putInode(fs, &par_id, &par_inode);
+        if (err_putInode != Success){
+        	fprintf("[mkdir] Error: failed to put Inode!\n");
     }
     
     /* allocate two entries in the new directory table (. , id) and (.., par_id) */
@@ -608,100 +625,146 @@ ErrorCode Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
    
     // insert an entry for current directory 
     strcpy(newBuf[0].key, ".");
-    newBuf[0].INodeID = id;
+    newBuf[0].inodeId = id;
 
     // special parent directory points back to parent
     strcpy(newBuf[1].key, "..");
-    newBuf[1].INodeID = par_id;
+    newBuf[1].inodeId = par_id;
     
-    bytesWritten = writeINodeData(fs, &inode, (BYTE*) newBuf, 0, 2 * sizeof(DirEntry));
-    if(bytesWritten < 2 * sizeof(DirEntry)) {
-        fprintf(stderr, "Error: failed to allocate data blocks for new file!\n");
+	//writeINodeData(fs, &inode, (BYTE*) newBuf, 0, 2 * sizeof(DirEntry));
+	size_type bytesWritten;
+	//ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte)
+	err_writeInodeData = writeInodeData(fs, &inode, (BYTE*) newBuf, 0, 2 * sizeof(DirEntry), &bytesWritten);
+	if (err_writeInodeData != Success){
+		printf("[mkdir] Error: failed to write new entry into parent directory!\n");
+		return err_writeInodeData;
+	}
+	
+    if (bytesWritten < 2 * sizeof(DirEntry)) {
+        printf("[mkdir] Error: failed to allocate data blocks for new file!\n");
         return -EDQUOT;
     }
 
     // change the inode type to directory
-    inode._in_type = DIRECTORY;
+    inode.fileType = Directory;
     
-    inode._in_uid = uid;
-    inode._in_gid = gid;
+//    inode._in_uid = uid;
+//    inode._in_gid = gid;
     struct passwd *ppwd = getpwuid(uid);
-    strcpy(inode._in_owner, ppwd->pw_name);
-
+    strcpy(inode.fileOwner, ppwd->pw_name);
+	
+	//TODO
+	// how to initialize permission?
     // init the mode
-    inode._in_permissions = S_IFDIR | 0755;
+    //inode._in_permissions = S_IFDIR | 0755;
 
     // init link count
-    inode._in_linkcount = 1;
+    inode.numOfLinks = 1;
 
     // update the inode file size
-    inode._in_filesize = 2 * sizeof(DirEntry);
-
-    // update the disk inode
-    writeINode(fs, id, &inode);
-
-    return id;
+    inode.fileSize = 2 * sizeof(DirEntry);
+	
+	// update the disk inode
+	// writeINode(fs, id, &inode);
+	// ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+	ErrorCode err_putInode = putInode(fs, &id, &inode);
+	if (err_putInode != Success){
+		printf("[mkdir] Error: failed to put Inode!\n");
+	}
+	*inodeId = id
+    return Success;
 }
 
 // reads directory contents
-INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
-	INT id; // the inode of the dir
-    UINT numDirEntry = 0;
-
-    id = (INT)l2_namei(fs, path);
+ErrorCode Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry, size_type* inodeId){
+	size_type id; // the inode of the dir
+    uint32_t numDirEntry = 0;
+	
+	
+	//ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id)
+	//id = (INT)l2_namei(fs, path);
+	Potato_namei(fs, path, &id);
     
     if(id < 0) { // directory does not exist
-        fprintf(stderr, "Directory %s not found!\n", path);
-        return id;
+        printf("[Readdir] Directory %s not found!\n", path);
+        *inodeId = id;
+        return Err_readdir;
     }
     else {
-        INode inode;
+        Inode inode;
         
-        if(readINode(fs, id, &inode) == -1) {
-            fprintf(stderr, "fail to read directory inode %d\n", id);
-            return -1;
+        //readINode(fs, id, &inode) == -1
+		if(getInode(fs, &id, &inode) != Success){
+		    printf("[Readdir] Error: fail to read directory inode %d\n", id);
+		    return Err_readdir;
+		}
+        
+        if(inode.fileType != Directory) {
+            printf("[Readdir] Error: NOT a directory\n");
+            return Err_readdir;
         }
 
-        if(inode._in_type != DIRECTORY) {
-            fprintf(stderr, "NOT a directory\n");
-            return -ENOTDIR;
-        }
+        numDirEntry = (inode.fileSize)/sizeof(DirEntry);
 
-        numDirEntry = (inode._in_filesize)/sizeof(DirEntry);
+		if (numDirEntry - 1 < offset) {
+//	  	    _err_last = _fs_EndOfDirEntry;
+//	 	    THROW(__FILE__, __LINE__, __func__);
+			return Err_readdir;		
+		}
 
-	if (numDirEntry - 1 < offset) {
-	    _err_last = _fs_EndOfDirEntry;
-	    THROW(__FILE__, __LINE__, __func__);
-	    return -1;		
-	}
-
-	#ifdef DEBUG_VERBOSE
-	printf("%d entries in cur dir %s, reading %u\n", numDirEntry, path, offset);
-	#endif
+		printf("[Readdir] %d entries in cur dir %s, reading %u\n", numDirEntry, path, offset);
+		
         // read the directory table
-        readINodeData(fs, &inode, (BYTE *)curEntry, (LONG)(offset * sizeof(DirEntry)), (LONG)sizeof(DirEntry));
+        //readINodeData(fs, &inode, (BYTE *)curEntry, (LONG)(offset * sizeof(DirEntry)), (LONG)sizeof(DirEntry));
+        size_type readbyte;
+        //ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte)
+        ErrorCode err_readInodeData = readInodeData(fs, &inode, (BYTE*) curEntry, (LONG)(offset * sizeof(DirEntry)), (LONG)sizeof(DirEntry), &readbyte);
+        if (err_readInodeData != Success){
+        	printf("[Readdir] Error: fail to read Inode Data!\n");
+        	return Err_readdir;
+        }
     }
     return 0;
 }
 
 //change mode
-INT Potato_chmod(FileSystem* fs, char* path, mode_t mode){
+ErrorCode Potato_chmod(FileSystem* fs, char* path, mode_t mode, size_type* inodeId){
 	//1. resolve path
-    INT INodeID = l2_namei(fs, path);
+    size_type INodeID;
+    //l2_namei(fs, path);
+    Potato_namei(fs, path, &INodeID);
+    
     if (INodeID < 0) {
-	_err_last = _fs_NonExistFile;
-	THROW(__FILE__, __LINE__, __func__);
-	return INodeID;
+//	_err_last = _fs_NonExistFile;
+//	THROW(__FILE__, __LINE__, __func__);
+	*inodeId = INodeID;
+	return Err_chmod;
     }
-    INode curINode;
-    if(readINode(fs, INodeID, &curINode) == -1) {
-        fprintf(stderr, "Error: fail to read inode for file %s\n", path);
-        return -1;
-    }
+    Inode curINode;
+    
+    //readINode(fs, INodeID, &curINode) == -1
+	if(getInode(fs, &INodeID, &curINode) != Success){
+		printf("[Readdir] Error: fail to read inode for file %s\n", path);
+		return Err_readdir;
+	}    
+    
     //printf("cur mode: %x\n", curINode._in_permissions);
     //2. check uid/gid
     //3. set mode
-    curINode._in_permissions = mode;
-    writeINode(fs, INodeID, &curINode);
-    return 0;
+    
+    //TODO
+    //HOWTO set permission
+    //curINode._in_permissions = mode;
+
+
+    //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+    //writeINode(fs, INodeID, &curINode);
+    ErrorCode err_putInode = putInode(fs, &INodeID, &curINode);
+    if (err_putInode != Success){
+    	fprintf("[Readdir] Error: failed to put Inode!\n");
+    }
+	
+    return Success;
 }
+
+

@@ -38,8 +38,10 @@ typedef enum {
     Err_destroyDisk = 20, 
     Err_mknod = 21, 
     Err_unlink = 22, 
-    Err_hasINodeEntry = 23
-    
+    Err_hasINodeEntry = 23,
+    Err_mkdir = 24,
+    Err_readdir = 25,
+    Err_chmod = 26
 } ErrorCode;
 
 typedef enum {
