@@ -219,10 +219,10 @@ static int f_write(const char *path, const char *buf, size_t size, off_t offset,
 	return (int)Potato_write(&fs, path, offset, buf, size);
 }
 
-static int f_utimens(const char *path, const struct timespec tv[2]) 
-{
-	return Potato_utimens(&fs, path, tv);
-}
+//static int f_utimens(const char *path, const struct timespec tv[2]) 
+//{
+//	return Potato_utimens(&fs, path, tv);
+//}
 
 static int f_statfs(const char *path, struct statvfs *stat)
 {
@@ -254,7 +254,7 @@ static struct fuse_operations Potato_oper = {
 	.release	= f_release,
 	.read		= f_read,
 	.write		= f_write,
-	.utimens	= f_utimens,
+//	.utimens	= f_utimens,
 	.statfs		= f_statfs,
 //	.init		= l3_mount,
 	.destroy	= f_unmount
