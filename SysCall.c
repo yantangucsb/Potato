@@ -1203,11 +1203,11 @@ INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
 	printf("[Potato_getattr] enter\n");
 	size_type INodeID;
 	//size_type INodeID = l2_namei(fs, path);
-	Potato_namei(fs, path, &INodeID);
-	printf("[Potato_getattr] inode id after namei: %ld\n", INodeID);
-    if(INodeID < 0){ // CAUTION: need to check the return value of namei
+	INT err = Potato_namei(fs, path, &INodeID);
+//	printf("[Potato_getattr] inode id after namei: %ld\n", INodeID);
+    if(err < 0){ // CAUTION: need to check the return value of namei
 		printf("[getattr] Error: fail to read old parent dir\n");
-		return INodeID;
+		return err;
 	}
 
     Inode i_node;
