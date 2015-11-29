@@ -523,7 +523,8 @@ INT Potato_unmount(FileSystem* fs){
 
 // makes a new file
 INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
-    char *path = i_path;
+    char path[FILE_PATH_LENGTH];
+    strcpy(path, i_path);
 	printf("[Potato_mknod] enter\n");
 	size_type id; // the inode id of the mounted file system (child directory)
 	size_type par_id; // the inode id of the mount point (parent directory)
