@@ -419,7 +419,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     	//defined in Syscall.c
     	
     	ErrorCode err_readinodedata = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
-        printf("cur start block: %ld, offset: %ld\n", block_no, block_offset);
+        printf("[readInodeData] cur start block: %ld, offset: %ld\n", block_no, block_offset);
     	if (err_readinodedata == Success){    	    	
     		//get() is defined in FileSystem.c
     		ErrorCode err_get = get(fs, block_no + fs->super_block.firstDataBlockId, data_block_buffer);

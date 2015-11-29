@@ -11,6 +11,7 @@ int main(){
     printDisk(&(fs.disk_emulator), 1);
     printFileSystem(&fs);
 
+    printf("DirEntry size: %ld\n", sizeof(DirEntry));
     Inode inode;
     size_type id = 0;
     getInode(&fs, &id, &inode);
@@ -28,7 +29,16 @@ int main(){
     inode_id = Potato_mknod(&fs, "/hello", 0, 0);
     Inode hello_inode;
     getInode(&fs, &inode_id, &hello_inode);
-    printf("hello inode_id: %ld, filetype: %u", inode_id, hello_inode.fileType);
-    return 1;
+    printf("hello inode_id: %ld, filetype: %u\n", inode_id, hello_inode.fileType);
+//    DirEntry dir_entry;
+//    Potato_readdir(&fs, "/", 0, &dir_entry);
+//    printf("dir entry key: %s, inode id: %ld\n", dir_entry.key, dir_entry.inodeId);
+//    Potato_getattr(&fs, "/hello", &root_stat);
+    inode_id = Potato_mkdir(&fs, "/dir", 0, 0);
+    Inode dir_inode;
+    getInode(&fs, &inode_id, &dir_inode);
+    printf("dir inode_id: %ld, filetype: %u\n", inode_id, dir_inode.fileType);
 
+    Potato_namei(&fs, "/dir", &inode_id);
+    return 1;
 }

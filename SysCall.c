@@ -13,7 +13,7 @@
 
 ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
     printf("[Potato_bmap] enter\n");
-    printf("Get block_id for offset %ld\n", *offset);
+    printf("[Potato_bmap] Get block_id for offset %ld\n", *offset);
 
     size_type curSize = DIRECT_BLOCK_NUM*BLOCK_SIZE;
     //if the offset is in directBlock
@@ -647,24 +647,27 @@ INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
     	//return err_writeInodeData;
     	return -1;
     }
-    
     if(bytesWritten != sizeof(DirEntry)) {
         printf("[Make Node] Error: failed to write new entry into parent directory!\n");
         //return Err_mknod;
         return -1;
     }
 
+    printf("[Potato_mknod] new parrent inode size: %ld, old size: %ld\n", offset+bytesWritten, par_inode.fileSize);
     // update parent directory file size, if it changed
-    if(offset + bytesWritten > par_inode.fileSize) {
-        par_inode.fileSize = offset + bytesWritten;
+//    if(offset + bytesWritten > par_inode.fileSize) {
+//        printf("[Potato_mknod] update parent inode size: %ld\n", offset+bytesWritten);
+//        par_inode.fileSize = offset + bytesWritten;
         
         //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
         ErrorCode err_putInode = putInode(fs, &par_id, &par_inode);
         if (err_putInode != Success){
         	printf("[Make Node] Error: failed to put Inode!\n");
         	return -1;
-        }        
-    }
+        }
+
+//    Potato_namei(fs, "/hello", &par_id); 
+//    }
 	
     inode._in_uid = uid;
     inode._in_gid = gid;
@@ -681,7 +684,7 @@ INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
     inode.numOfLinks = 1;
 
     //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
-    ErrorCode err_putInode = putInode(fs, &id, &inode);
+    err_putInode = putInode(fs, &id, &inode);
     if (err_putInode != Success){
     	printf("[Make Node] Error: failed to put Inode!\n");
     	return -1;
@@ -893,10 +896,11 @@ INT Potato_unlink(FileSystem* fs, char* path){
 
 
 // makes a new directory
-INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
+INT Potato_mkdir(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
     printf("[Potato_mkdir] enter\n");
-    printf("Potato_mkdir called for path: %s\n", path);
-    
+    printf("Potato_mkdir called for path: %s\n", i_path);
+    char path[FILE_PATH_LENGTH];
+    strcpy(path, i_path);
     size_type id; // the inode id associated with the new directory
     size_type par_id; // the inode id of the parent directory
     char par_path[FILE_PATH_LENGTH];
@@ -909,9 +913,9 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     }
 	
     size_type rRes;
-    Potato_namei(fs, path, &rRes);
+    INT err = Potato_namei(fs, path, &rRes);
     
-    if (rRes == -ENOTDIR) {
+    if (err == -ENOTDIR) {
 //        _err_last = _fs_NonDirInPath;
 //        THROW(__FILE__, __LINE__, __func__);
         return -ENOTDIR;
@@ -1034,8 +1038,8 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
 	}
 	
 	// update parent directory file size, if it changed
-    if(offset + bytesWritten > par_inode.fileSize) {
-        par_inode.fileSize = offset + bytesWritten;
+//    if(offset + bytesWritten > par_inode.fileSize) {
+ //       par_inode.fileSize = offset + bytesWritten;
         //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
         //writeINode(fs, par_id, &par_inode);
         ErrorCode err_putInode = putInode(fs, &par_id, &par_inode);
@@ -1043,7 +1047,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
         	printf("[mkdir] Error: failed to put Inode!\n");
         	return -1;
         }
-    }
+//    }
     
     /* allocate two entries in the new directory table (. , id) and (.., par_id) */
     // init directory table for the new directory
@@ -1090,7 +1094,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
 	// update the disk inode
 	// writeINode(fs, id, &inode);
 	// ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
-	ErrorCode err_putInode = putInode(fs, &id, &inode);
+	err_putInode = putInode(fs, &id, &inode);
 	if (err_putInode != Success){
 		printf("[mkdir] Error: failed to put Inode!\n");
 		return -1;
@@ -1200,7 +1204,8 @@ INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
 	size_type INodeID;
 	//size_type INodeID = l2_namei(fs, path);
 	Potato_namei(fs, path, &INodeID);
-	if(INodeID < 0){ // CAUTION: need to check the return value of namei
+	printf("[Potato_getattr] inode id after namei: %ld\n", INodeID);
+    if(INodeID < 0){ // CAUTION: need to check the return value of namei
 		printf("[getattr] Error: fail to read old parent dir\n");
 		return INodeID;
 	}

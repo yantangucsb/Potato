@@ -58,9 +58,15 @@ void testNamei(){
 
     //write dir entries to data block
     BYTE* buf = malloc(BLOCK_SIZE);
-    memcpy(buf, dir_entry, sizeof(dir_entry));
-    put(&fs, block_id + fs.super_block.firstDataBlockId, buf);
-    
+//    memcpy(buf, dir_entry, sizeof(dir_entry));
+//    put(&fs, block_id + fs.super_block.firstDataBlockId, buf);
+    size_type writebyte;
+    ErrorCode err_write = writeInodeData(&fs, &inode, (BYTE*)dir_entry, 0, sizeof(dir_entry), &writebyte);  
+    if(err_write == Success){
+        printf("[writeInodeData] write %ld\n", writebyte);
+    }else{
+        printf("[writeInodeData] write failed.\n");
+    }
     //write root directory to disk
     putInode(&fs, &inode_id, &inode);
     
