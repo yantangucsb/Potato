@@ -12,6 +12,7 @@
 
 
 ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
+    printf("[Potato_bmap] enter\n");
     printf("Get block_id for offset %ld\n", *offset);
 
     size_type curSize = DIRECT_BLOCK_NUM*BLOCK_SIZE;
@@ -87,6 +88,7 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
 
 //by marco
 ErrorCode Potato_bfree(FileSystem *fs, Inode *inode, size_type file_block_id){
+	printf("[Potato_bfree] enter\n");
     ErrorCode err = Success;
     size_type offset = file_block_id * BLOCK_SIZE;
     size_type data_block_id, data_block_offset;
@@ -228,6 +230,7 @@ ErrorCode Potato_bfree(FileSystem *fs, Inode *inode, size_type file_block_id){
  * Error: NoInode
  */
 ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
+	printf("[Potato_namei] enter\n");
     if(path_name == 0){
         return InodeNotExist;
     }
@@ -296,6 +299,7 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
 }
 
 bool checkPermission(uint32_t permission, FileOp flag){
+	printf("[checkPermission] enter\n");
 	//owner's permission check
     if(flag == READ){
         if((permission/100)/4 == 0)
@@ -311,6 +315,7 @@ bool checkPermission(uint32_t permission, FileOp flag){
 }
 
 INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
+	printf("[Potato_open] enter\n");
     //check if the file is already open
     OpenFileEntry* file_entry = NULL;
     getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
@@ -382,7 +387,7 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
 
 // mounts a filesystem from a device
 INT Potato_mount(FileSystem* fs){
-	
+	printf("[Potato_mount] enter\n");
 	printf("[Potato mount] mount called for fs: %p\n", fs);
 	printf("Reading superblock from disk...\n");
     if(loadFS(fs) != Success){
@@ -488,6 +493,7 @@ INT Potato_mount(FileSystem* fs){
 
 // unmounts a filesystem into a device
 INT Potato_unmount(FileSystem* fs){
+	printf("[Potato_unmount] enter\n");
 	//put super block on disk
     SuperBlockonDisk super_block_on_disk;
 	if (mapSuperBlockonDisk(&(fs->super_block), &(super_block_on_disk)) != Success){
@@ -517,6 +523,7 @@ INT Potato_unmount(FileSystem* fs){
 
 // makes a new file
 INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
+	printf("[Potato_mknod] enter\n");
 	size_type id; // the inode id of the mounted file system (child directory)
 	size_type par_id; // the inode id of the mount point (parent directory)
 	char par_path[FILE_PATH_LENGTH];
@@ -685,6 +692,7 @@ INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
 
 // deletes a file or directory
 INT Potato_unlink(FileSystem* fs, char* path){
+	printf("[Potato_unlink] enter\n");
     // 1. get the inode of the parent directory using l2_namei
     // 2. clears the corresponding entry in the parent directory table, write
     // inode number to -1
@@ -884,6 +892,7 @@ INT Potato_unlink(FileSystem* fs, char* path){
 
 // makes a new directory
 INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
+    printf("[Potato_mkdir] enter\n");
     printf("Potato_mkdir called for path: %s\n", path);
     
     size_type id; // the inode id associated with the new directory
@@ -1092,6 +1101,7 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
 
 // reads directory contents
 INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
+	printf("[Potato_readdir] enter\n");
 	size_type id; // the inode of the dir
     uint32_t numDirEntry = 0;
 
@@ -1143,6 +1153,7 @@ INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
 
 //change mode
 INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
+	printf("[Potato_chmod] enter\n");
 	//1. resolve path
     size_type INode_ID;
     //l2_namei(fs, path);
@@ -1183,6 +1194,7 @@ INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
 
 // getattr
 INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
+	printf("[Potato_getattr] enter\n");
 	size_type INodeID;
 	//size_type INodeID = l2_namei(fs, path);
 	Potato_namei(fs, path, &INodeID);
@@ -1218,7 +1230,7 @@ INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
 //2. check uid/gid
 //3. set uid/gid and write inode
 INT Potato_chown(FileSystem *fs, char *path, uid_t uid, gid_t gid){
-
+	printf("[Potato_chown] enter\n");
 	//1. resolve path
 	size_type INodeID;
 	//INT INodeID = l2_namei(fs, path);
@@ -1253,7 +1265,7 @@ INT Potato_chown(FileSystem *fs, char *path, uid_t uid, gid_t gid){
 }
 
 INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes){
-
+	printf("[Potato_read] enter\n");
     // look up open file table for an open file entry
     ErrorCode err = Success;
     OpenFileEntry* file_entry;
@@ -1283,6 +1295,7 @@ INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, si
 
 
 INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes) {
+    printf("[Potato_write] enter\n");
     ErrorCode err = Success;
     OpenFileEntry* file_entry;
     getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
@@ -1322,7 +1335,7 @@ INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, s
 
 
 INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
-
+	printf("[Potato_rename] enter\n");
 	// update the open file table
 	ErrorCode err;
 	OpenFileEntry* file_entry;
@@ -1444,6 +1457,7 @@ INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
 
 
 INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
+	printf("[Potato_close] enter\n");
     //retrieve open file entry
     OpenFileEntry* file_entry;
     ErrorCode err = getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
@@ -1468,7 +1482,7 @@ INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
 }
 
 INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen) {
-    
+    printf("[Potato_truncate] enter\n");
     ErrorCode err = Success;
     // use namei to find the inode by the path name
     size_type inode_id;
