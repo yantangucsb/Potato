@@ -25,20 +25,19 @@ static const char *hello_path = "/hello";
 
 static int f_getattr(const char *path, struct stat *stbuf)
 {
+	printf("[Potato_getattr] calling getattr\n");
 	int res = 0;
-	
 	#ifdef DEBUG
 	//printf("getattr %s\n", path);
 	#endif
-
 	memset(stbuf, 0, sizeof(struct stat));
-
 	return Potato_getattr(&fs, path, stbuf);
 }
 
 static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			 off_t offset, struct fuse_file_info *fi)
 {
+	printf("[Potato_readdir] calling readdir\n");
 	//printf("offset: %u\n", offset);
 	(void) fi;
  	DirEntry curEntry;
@@ -66,6 +65,7 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int f_mknod(const char *path, mode_t mode, dev_t dev)
 {
+	printf("[Potato_mknod] calling mknod\n");
 	struct fuse_context* fctx = fuse_get_context();
 	INT res = Potato_mknod(&fs, path, fctx->uid, fctx->gid);
 	return res>0?0:res;
@@ -73,6 +73,7 @@ static int f_mknod(const char *path, mode_t mode, dev_t dev)
 
 static int f_mkdir(const char *path, mode_t mode)
 {
+	printf("[Potato_mkdir] calling mkdir\n");
 	struct fuse_context* fctx = fuse_get_context();
 	INT res = Potato_mkdir(&fs, path, fctx->uid, fctx->gid);
 	return res>0?0:res;
@@ -80,16 +81,19 @@ static int f_mkdir(const char *path, mode_t mode)
 
 static int f_unlink(const char *path)
 {
+	printf("[Potato_unlink] calling unlink\n");
 	return Potato_unlink(&fs, path);
 }
 
 static int f_rmdir(const char *path)
 {
+	printf("[Potato_rmdir] calling rmdir\n");
 	return Potato_unlink(&fs, path);
 }
 
 static int f_rename(const char *path, const char *new_path)
 {
+	printf("[Potato_rename] calling rename\n");
 	#ifdef DEBUG
 	printf("old name: %s\n", path);
 	printf("new name: %s\n", new_path);
@@ -99,6 +103,7 @@ static int f_rename(const char *path, const char *new_path)
 
 static int f_chmod(const char *path, mode_t mode)
 {
+	printf("[Potato_chmod] calling chmod\n");
 	#ifdef DEBUG
 	printf("l3_chmod with mode: %x\n", mode);
 	#endif
@@ -107,18 +112,21 @@ static int f_chmod(const char *path, mode_t mode)
 
 static int f_chown(const char *path, uid_t uid, gid_t gid)
 {
+	printf("[Potato_chown] calling chown\n");
 	printf("l3_chown\n");
 	return Potato_chown(&fs, path, uid, gid);
 }
 
 static int f_truncate(const char *path, off_t offset)
 {
+	printf("[Potato_truncate] calling truncate\n");
     //printf("truncate %s to be length %u\n", path, offset);
 	return Potato_truncate(&fs, path, offset);;
 }
 
 static int f_open(const char *path, struct fuse_file_info *fi)
 {
+	printf("[Potato_open] calling open\n");
     //parse file operation from flags
     FileOp fileOp;
     int opflag = fi->flags & 3;
@@ -167,6 +175,7 @@ static int f_open(const char *path, struct fuse_file_info *fi)
 
 static int f_release(const char *path, struct fuse_file_info *fi)
 {
+	printf("[Potato_release] calling releases\n");
     //parse file operation from flags
     FileOp fileOp;
     int opflag = fi->flags & 3;
@@ -190,6 +199,7 @@ static int f_release(const char *path, struct fuse_file_info *fi)
 static int f_read(const char *path, char *buf, size_t size, off_t offset,
 		      struct fuse_file_info *fi)
 {
+	printf("[Potato_read] calling read\n");
         /*
 	size_t len;
 	(void) fi;
@@ -212,6 +222,7 @@ static int f_read(const char *path, char *buf, size_t size, off_t offset,
 
 static int f_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
+	printf("[Potato_write] calling write\n");
 	#ifdef DEBUG_VERBOSE
     	printf("l3_write received buffer to write: %s\n", buf);
 	printf("Calling Potato_write for path \"%s\" and offset: %u for size: %u\n", path, offset, size);
@@ -226,16 +237,19 @@ static int f_write(const char *path, const char *buf, size_t size, off_t offset,
 
 static int f_statfs(const char *path, struct statvfs *stat)
 {
+	printf("[Potato_statfs] calling statfs\n");
 	;
 }
 
 void * f_mount(struct fuse_conn_info *conn)
 {
+	printf("[Potato_mount] calling mount\n");
 	INT succ = Potato_mount(&fs);
 }
 
 void * f_unmount(void *conn)
 {
+	printf("[Potato_unmount] calling unmount\n");
 	INT succ = Potato_unmount(&fs);
 }
 
