@@ -81,9 +81,10 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     //Map superblock to superblockonDisk
     SuperBlockonDisk super_block_on_disk;
     mapSuperBlockonDisk(&(fs->super_block), &(super_block_on_disk));
-    BYTE buf[BLOCK_SIZE];
+    BYTE* buf = malloc(BLOCK_SIZE);
     memcpy(buf, &super_block_on_disk, sizeof(SuperBlockonDisk));
     put(fs, SUPER_BLOCK_OFFSET, buf);
+    free(buf);
 
     //test if load correctly for super block
 /*    readSuperBlock(fs);
@@ -114,13 +115,15 @@ ErrorCode loadFS(FileSystem* fs) {
 }
 
 ErrorCode readSuperBlock(FileSystem* fs){
-    BYTE buffer[BLOCK_SIZE];
+    BYTE* buffer = malloc(BLOCK_SIZE);
     get(fs, SUPER_BLOCK_OFFSET, buffer);
-    printDisk(&(fs->disk_emulator), SUPER_BLOCK_OFFSET);
+//    printDisk(&(fs->disk_emulator), SUPER_BLOCK_OFFSET);
     SuperBlockonDisk sb_on_disk;
     memcpy(&sb_on_disk, buffer, sizeof(SuperBlockonDisk));
+    printf("sb_on_disk entry: %ld\n", sb_on_disk.freeInodeList[33]);
     mapDisk2SuperBlockinMem(&sb_on_disk, &(fs->super_block));
 
+    free(buffer);
     return Success;
 }
 

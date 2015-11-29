@@ -31,6 +31,7 @@ ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_blo
 
     //inode 0 is reserved for root directory
     //This should be done in initFS
+    memset(super_block->freeInodeList, 0, sizeof(super_block->freeInodeList)); 
     for(; i>=0; i--){
         super_block->freeInodeList[i] = super_block->freeInodeIndex-i+1;
     }

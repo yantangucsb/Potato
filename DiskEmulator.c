@@ -45,6 +45,15 @@ ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size){
         printf("Disk init failed. Error: %s\n", strerror(errno));
     if(ftruncate(disk_emulator->disk, size) == -1)
         printf("Set size to disk failed: Error: %s\n", strerror(errno));
+    //initialize disk
+    BYTE* buf = malloc(size);
+    memset(buf, 0, size);
+    if(write(disk_emulator->disk, buf, size) == -1){
+        printf("Init disk failed: Error: %s\n", strerror(errno));
+    }
+
+    free(buf);
+    
     return Success;
 }
 

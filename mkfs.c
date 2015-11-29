@@ -7,7 +7,7 @@
 
 int main(){
     FileSystem fs;
-    size_type size = 0x1FFF;
+    size_type size = 0x7FFFFFF;
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
     loadFS(&fs);
@@ -22,14 +22,7 @@ int main(){
         return -1;
     }
 
-    closefs(&fs);
-
-    FileSystem new_fs;
-    loadFS(&new_fs);
-//    printDisk(&(fs.disk_emulator), 0);
-    printFileSystem(&new_fs);
-	
-/*    loadFS(&fs);
+    loadFS(&fs);
     //allocate a block to root directory
     size_type block_id;
     allocBlock(&fs, &block_id);
@@ -44,7 +37,7 @@ int main(){
     strcpy(dir_entry[1].key, "..");
     dir_entry[1].inodeId = ROOT_INODE_ID;
 
-    BYTE buf[BLOCK_SIZE];
+    BYTE* buf = malloc(BLOCK_SIZE);
     memcpy(buf, dir_entry, sizeof(dir_entry));
     put(&fs, block_id + fs.super_block.firstDataBlockId, buf);
     
@@ -65,11 +58,12 @@ int main(){
     put(&fs, SUPER_BLOCK_OFFSET, buf);
     //set root acess time
 
-    closefs(&fs);*/
-/*
+    free(buf);
+    closefs(&fs);
+
     FileSystem new_fs;
     loadFS(&new_fs);
     printFileSystem(&new_fs);
-  */  
+    closefs(&fs);   
     return 0;
 }

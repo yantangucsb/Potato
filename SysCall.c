@@ -1281,9 +1281,9 @@ INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, si
     Inode*      cur_inode     = &(file_entry->inodeEntry->inode);
 
     // record access time
-    int t_access = time(NULL);
-    sprintf(cur_inode->fileAccessTime, "%d", t_access);
-
+//    int t_access = time(NULL);
+//    sprintf(cur_inode->fileAccessTime, "%d", t_access);
+    cur_inode->fileAccessTime = time(NULL);
     size_type data_size;
     err = readInodeData(fs, cur_inode, buf, offset, numBytes, &data_size);
     assert(err == Success);
@@ -1323,10 +1323,11 @@ INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, s
         cur_inode->fileSize = offset + data_size;
     }
 
-    int t_modified = time(NULL);
-    sprintf(cur_inode->fileModifiedTime, "%d", t_modified);
-    sprintf(cur_inode->inodeModifiedTime, "%d", t_modified);
-
+//    int t_modified = time(NULL);
+//    sprintf(cur_inode->fileModifiedTime, "%d", t_modified);
+//    sprintf(cur_inode->inodeModifiedTime, "%d", t_modified);
+    cur_inode->fileModifiedTime = time(NULL);
+    cur_inode->inodeModifiedTime = time(NULL);
     err = putInode(fs, &cur_inode_id, cur_inode);
     assert(err == Success);
     
