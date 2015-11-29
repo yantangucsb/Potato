@@ -8,7 +8,16 @@ int main(){
 
     FileSystem fs;
     loadFS(&fs);
+    printDisk(&(fs.disk_emulator), 0);
     printFileSystem(&fs);
+/*
+    SuperBlockonDisk sb_ondisk;
+    BYTE* buf = malloc(BLOCK_SIZE);
+    get(&fs, 0, buf);
+    memcpy(&sb_ondisk, buf, sizeof(SuperBlockonDisk));
+    mapDisk2SuperBlockinMem(&sb_ondisk, &(fs.super_block));
+    printFileSystem(&fs);
+  */  
 
     size_type inode_id;
     if(Potato_namei(&fs, "/", &inode_id) != Success){

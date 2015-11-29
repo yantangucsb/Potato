@@ -17,14 +17,14 @@
  * By Yan
  */
 ErrorCode put(FileSystem *fs, size_type block_no, void* buffer){
-    if(block_no >= fs->super_block.systemSize/BLOCK_SIZE || block_no < 0)
-        return OutOfBound;
+//    if(block_no >= fs->super_block.systemSize/BLOCK_SIZE || block_no < 0)
+//        return OutOfBound;
     return writeBlock(&(fs->disk_emulator), block_no, buffer);
 }
 
 ErrorCode get(FileSystem *fs, size_type block_no, void* buffer){
-    if(block_no >= fs->super_block.systemSize/BLOCK_SIZE || block_no < 0)
-        return OutOfBound;
+//    if(block_no >= fs->super_block.systemSize/BLOCK_SIZE || block_no < 0)
+//        return OutOfBound;
     return readBlock(&(fs->disk_emulator), block_no, buffer);
 }
 
