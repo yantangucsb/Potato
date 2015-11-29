@@ -8,17 +8,13 @@ int main(){
 
     FileSystem fs;
     loadFS(&fs);
-    printDisk(&(fs.disk_emulator), 0);
+    printDisk(&(fs.disk_emulator), 1);
     printFileSystem(&fs);
-/*
-    SuperBlockonDisk sb_ondisk;
-    BYTE* buf = malloc(BLOCK_SIZE);
-    get(&fs, 0, buf);
-    memcpy(&sb_ondisk, buf, sizeof(SuperBlockonDisk));
-    mapDisk2SuperBlockinMem(&sb_ondisk, &(fs.super_block));
-    printFileSystem(&fs);
-  */  
 
+    Inode inode;
+    size_type id = 0;
+    getInode(&fs, &id, &inode);
+    printf("root links %ld\n", inode.numOfLinks);
     size_type inode_id;
     if(Potato_namei(&fs, "/", &inode_id) != Success){
         printf("[Layer1Test] Potato_namei failed for path /\n");

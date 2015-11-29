@@ -22,7 +22,6 @@ int main(){
         return -1;
     }
 
-    loadFS(&fs);
     //allocate a block to root directory
     size_type block_id;
     allocBlock(&fs, &block_id);
@@ -45,8 +44,15 @@ int main(){
     
     //for . and ..
     inode.numOfLinks = 2;
-    putInode(&fs, &inode_id, &inode);
+    ErrorCode err = putInode(&fs, &inode_id, &inode);
+    if(err != Success){
+        printf("put root failed: Error %d", err);
+    }
 
+    Inode cur_inode;
+    getInode(&fs, &inode_id, &cur_inode);
+    printf("inode links: %ld\n", cur_inode.numOfLinks);
+    printDisk(&(fs.disk_emulator), 1);
     //put free list buf into disk
     put(&fs, fs.super_block.pDataFreeListHead + fs.super_block.firstDataBlockId, &(fs.dataBlockFreeListHeadBuf));
     put(&fs, fs.super_block.pDataFreeListTail + fs.super_block.firstDataBlockId, &(fs.dataBlockFreeListTailBuf));
@@ -63,7 +69,10 @@ int main(){
 
     FileSystem new_fs;
     loadFS(&new_fs);
-    printFileSystem(&new_fs);
+//    printFileSystem(&new_fs);
+    getInode(&new_fs, &inode_id, &cur_inode);
+    printf("inode links: %ld\n", cur_inode.numOfLinks);
+
     closefs(&fs);   
     return 0;
 }

@@ -15,6 +15,7 @@ void testNamei(){
     size_type size = 0x7FFFFFF;
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
+    
     loadFS(&fs);
    
     initOpenFileTable(&(fs.open_file_table));
@@ -23,7 +24,7 @@ void testNamei(){
     //create root directory
     Inode inode;
     size_type inode_id = ROOT_INODE_ID;
-    if(getInode(&fs, &inode_id, &inode)){
+    if(getInode(&fs, &inode_id, &inode) != Success){
         printf("root directory not exist.\n");
     }
 
@@ -63,6 +64,7 @@ void testNamei(){
     //write root directory to disk
     putInode(&fs, &inode_id, &inode);
     
+   // printDisk(&(fs.disk_emulator), 1);
     DirEntry second_dir_entry[4];
     strcpy(second_dir_entry[0].key, ".");
     second_dir_entry[0].inodeId = second_inodeId;

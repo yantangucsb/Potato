@@ -154,7 +154,7 @@ ErrorCode garbcollectInode(FileSystem* fs){
 		freed_inode_in_block = false;
 		
 		//get() is defined in FileSystem.c
-		ErrorCode err = get(fs, block_no, data_block_buffer);
+		ErrorCode err = get(fs, block_no +1, data_block_buffer);
 		if (err==Success){
 			int i=0;
 			for (;i<num_of_inodes_per_block;i++){
@@ -189,7 +189,7 @@ ErrorCode garbcollectInode(FileSystem* fs){
 		//if inodes in this block have been added to the free list cache, then we should write the block back to the disk
 		if (freed_inode_in_block == true){
 			//put() is defined in FileSystem.c
-			ErrorCode err_put=put(fs, block_no, data_block_buffer);
+			ErrorCode err_put=put(fs, block_no + 1, data_block_buffer);
 			if (err_put==Success)
 				printf("[Garbage Collection] Block %ld has been written back to disk\n",block_no);
 			else{
@@ -316,11 +316,12 @@ ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode){
 	Inode *temp_inode = data_block_buffer;//pointer to buffer
 	
 	//get() is defined in FileSystem.c
-	ErrorCode err = get(fs, block_no, data_block_buffer);
+	ErrorCode err = get(fs, block_no + 1, data_block_buffer);
 	if (err==Success){
 		//WARNING this is a hard copy, buffer will be released later
-		*inode = temp_inode[inode_offset];
-		free(data_block_buffer);
+		//*inode = temp_inode[inode_offset];
+		memcpy(inode, temp_inode+inode_offset, sizeof(Inode));
+        free(data_block_buffer);
 		return Success;	
 	}
 	else{
@@ -346,19 +347,21 @@ ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode){
 	Inode *temp_inode = data_block_buffer;//pointer to buffer
 	
 	//get() is defined in FileSystem.c
-	ErrorCode err = get(fs, block_no, data_block_buffer);
+	ErrorCode err = get(fs, block_no + 1, data_block_buffer);
 	if (err==Success){
 		//WARNING this is a hard copy, buffer will be released later
-		temp_inode[inode_offset] = *inode;
-		//put() is defined in FileSystem.c
-		ErrorCode err_put=put(fs, block_no, data_block_buffer);
+		//temp_inode[inode_offset] = *inode;
+		memcpy(temp_inode+inode_offset, inode, sizeof(Inode));
+        //put() is defined in FileSystem.c
+		ErrorCode err_put=put(fs, block_no + 1, data_block_buffer);
 		if (err_put==Success){
 			free(data_block_buffer);
 			return Success;
 		}
 		else{
 			free(data_block_buffer);
-			return Err_PutInode;
+			printf("putInode failed. Error %ld", err_put);
+            return Err_PutInode;
 		}
 	}
 	else{
@@ -532,7 +535,7 @@ ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type star
     	ErrorCode err_writeinodedata = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
     	if (err_writeinodedata == Success){
     		//get() is defined in FileSystem.c
-    		ErrorCode err_get = get(fs, block_no, data_block_buffer);
+    		ErrorCode err_get = get(fs, block_no + fs->super_block.firstDataBlockId, data_block_buffer);
     		if (err_get == Success){
     			if ((end-start+1)>=BLOCK_SIZE){
     				if (flag == 0){
@@ -572,7 +575,7 @@ ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type star
     			}
     			//ErrorCode put(FileSystem *fs, size_type block_no, void* buffer)
     			//defined in FileSystem.c
-    			ErrorCode err_put = put(fs, block_no, data_block_buffer);
+    			ErrorCode err_put = put(fs, block_no + fs->super_block.firstDataBlockId, data_block_buffer);
     			if (err_put != Success){
     				printf("[Write Inode Data] Error putting data block\n");
     				free(data_block_buffer);
