@@ -32,6 +32,8 @@ ErrorCode get(FileSystem* fs, size_type block_no, void* buffer);
 
 ErrorCode initFS(size_type size, size_type percen, FileSystem* fs);
 
+ErrorCode loadFS(FileSystem* fs);
+
 ErrorCode readSuperBlock(FileSystem* fs);
 
 ErrorCode closefs(FileSystem* fs);

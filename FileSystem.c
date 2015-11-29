@@ -75,11 +75,6 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     //set up free list for data block
     setDataBlockFreeList(fs);
    
-    //set up free list buf
-    get(fs, fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListHeadBuf));
-    //printDisk(&(fs->disk_emulator), fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
-//    printf("read head buf from: %ld\n", fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
-    get(fs, fs->super_block.pDataFreeListTail+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListTailBuf));
 
     //put super block on disk at the end of initialization
     //what if the super block is larger than BLOCK_SIZE? Yan
@@ -88,6 +83,22 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     mapSuperBlockonDisk(&(fs->super_block), &(super_block_on_disk));
     put(fs, SUPER_BLOCK_OFFSET, &(super_block_on_disk));
     
+    return Success;
+}
+
+ErrorCode loadFS(FileSystem* fs) {
+    loadDisk(&(fs->disk_emulator));
+    readSuperBlock(fs);
+
+    //set up free list buf
+    get(fs, fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListHeadBuf));
+    //printDisk(&(fs->disk_emulator), fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
+//    printf("read head buf from: %ld\n", fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
+    get(fs, fs->super_block.pDataFreeListTail+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListTailBuf));
+
+    initOpenFileTable(&(fs->open_file_table));
+    initInodeTable(&(fs->inode_table));
+
     return Success;
 }
 

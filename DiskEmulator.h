@@ -20,6 +20,8 @@ typedef struct{
 */
 ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size);
 
+ErrorCode loadDisk(DiskEmulator *disk_emulator);
+
 ErrorCode destroyDisk(DiskEmulator *);
 
 ErrorCode readBlock(DiskEmulator *disk_emulator, size_type block_num, void* out_buffer);

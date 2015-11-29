@@ -385,7 +385,10 @@ INT Potato_mount(FileSystem* fs){
 	
 	printf("[Potato mount] mount called for fs: %p\n", fs);
 	printf("Reading superblock from disk...\n");
-	//buffer for the superblock of the mounted FS
+    if(loadFS(fs) != Success){
+        printf("[mount] load FS failed.");
+    }
+/*	//buffer for the superblock of the mounted FS
 	BYTE superblk_buf[BLOCK_SIZE];
 	SuperBlockonDisk* superblk_buf_pt = (SuperBlockonDisk*) superblk_buf;
 	
@@ -394,10 +397,10 @@ INT Potato_mount(FileSystem* fs){
     //the file offset and the file status flags (see below).  A file descriptor is a reference to an open file description; this reference
     //is unaffected if pathname is subsequently removed or modified to refer to a different file.
         
-    //*DISK_PATH is disk partition path
-    //*The argument flags must include one of the following access modes: O_RDONLY, O_WRONLY, or O_RDWR.  These request opening the file read-
+    // *DISK_PATH is disk partition path
+    // *The argument flags must include one of the following access modes: O_RDONLY, O_WRONLY, or O_RDWR.  These request opening the file read-
     //only, write-only, or read/write, respectively.
-    //*Permission 666(grant read, write access to everyone)
+    // *Permission 666(grant read, write access to everyone)
 	INT diskFile = open(DISK_PATH, O_RDWR, 0666);
 	if (diskFile == -1){
 		printf("[Potato mount] Error: disk open error %s\n", strerror(errno));
@@ -467,18 +470,14 @@ INT Potato_mount(FileSystem* fs){
     allocBlock(fs, &block_id);
     inode.directBlock[0] = block_id;
     inode.fileType = Directory;
-	
+	*/
 	return 0;
 }
 
 // unmounts a filesystem into a device
 INT Potato_unmount(FileSystem* fs){
-	//TODO
-	//do we need to write free block cache back to disk
-	
-	//ErrorCode mapSuperBlockonDisk(SuperBlock* super_block, SuperBlockonDisk* sb_on_disk)
-	//defined in superblock.c
-	SuperBlockonDisk super_block_on_disk;
+	//put super block on disk
+    SuperBlockonDisk super_block_on_disk;
 	if (mapSuperBlockonDisk(&(fs->super_block), &(super_block_on_disk)) != Success){
 		printf("[Potato mount] Error: map SuperBlock on Disk.\n");
 		//return Err_mapSuperBlockonDisk;
@@ -486,15 +485,22 @@ INT Potato_unmount(FileSystem* fs){
 	}
 	put(fs, SUPER_BLOCK_OFFSET, &(super_block_on_disk));
 		 
-	fs->super_block.modified = false;
-	
+    //put free list buf into disk
+    put(fs, fs->super_block.pDataFreeListHead + fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListHeadBuf));
+    put(fs, fs->super_block.pDataFreeListTail + fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListTailBuf));
+
+    //put inode entries to disk
+    InodeEntry* cur_entry = fs->inode_table.head;
+    while(cur_entry != NULL){
+        putInode(fs, &(cur_entry->id), &(cur_entry->inode)); 
+    }
+
 	//close disk to prevent future writes
 	//defined in FileSystem.c
 	closefs(fs);
 		 
 	return 0;
 }
-
 
 
 // makes a new file

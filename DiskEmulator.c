@@ -31,7 +31,7 @@
 
 //Phase 2
 //Load disk from the existing file
-ErrorCode loadDisk(DiskEmulator *disk_emulator, size_type size){
+ErrorCode loadDisk(DiskEmulator *disk_emulator){
     disk_emulator->disk = open(DISK_PATH, O_RDWR, 0666);
     if(disk_emulator->disk == -1)
         printf("Disk open failed. Error: %s\n", strerror(errno));
@@ -43,7 +43,8 @@ ErrorCode initDisk(DiskEmulator *disk_emulator, size_type size){
     disk_emulator->disk = open(DISK_PATH, O_RDWR | O_CREAT, 0666);
     if(disk_emulator->disk == -1)
         printf("Disk init failed. Error: %s\n", strerror(errno));
-    ftruncate(disk_emulator->disk, size);
+    if(ftruncate(disk_emulator->disk, size) == -1)
+        printf("Set size to disk failed: Error: %s\n", strerror(errno));
     return Success;
 }
 
