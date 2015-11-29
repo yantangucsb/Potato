@@ -1540,3 +1540,47 @@ INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen) {
 
     return 0;
 }
+
+
+
+//update mod/access time of a file
+//1. resolve path
+//1. check permission (*)
+//2. update inode cache (*)
+//3. sync inode (*)
+//4. load inode
+//5. write inode
+INT Potato_utimens(FileSystem *fs, char *path, struct timespec tv[2]) 
+{
+	
+	//INT curINodeID = l2_namei(fs, path);
+	size_type curINodeID;
+	ErrorCode err_namei = Potato_namei(fs, path, &curINodeID);
+	assert (err_namei == Success);
+	
+	if (curINodeID < 0) {
+		return curINodeID;
+	}
+	
+    //readINode(fs, curINodeID, &curINode);
+    Inode curINode;
+    if(getInode(fs, curINodeID, &curINode) != Success){
+    	printf("[utimens] Error: failed to get Inode!\n");
+    	return -1;
+    }
+	
+	curINode.fileModifiedTime = tv[0].tv_sec;
+	curINode.fileAccessTime = tv[1].tv_sec;
+	
+	//writeINode(fs, curINodeID, &curINode);
+    ErrorCode err_putInode = putInode(fs, &curINodeID, &curINode);
+    if (err_putInode != Success){
+       	printf("[utimens] Error: failed to put Inode!\n");
+      	return -1;
+    }	
+	
+	return 0;
+}
+
+
+

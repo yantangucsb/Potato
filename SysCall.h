@@ -65,4 +65,5 @@ INT Potato_close(FileSystem* fs, char* path_name, FileOp flag);
 // truncate a file
 INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen);
 
+INT Potato_utimens(FileSystem *fs, char *path, struct timespec tv[2]);
 
