@@ -346,9 +346,9 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
     //covert the path to inode_id
     size_type inode_id;
     ErrorCode err = Potato_namei(fs, path_name, &inode_id);
-    if(err == InodeNotExist){
+    if(err == -ENOENT){
         printf("%s: No such file or directory", path_name);
-    }else if(err == NotDirectory){
+    }else if(err == ENOTDIR){
         printf("%s: Not a direcotry", path_name);
     }
 
@@ -578,7 +578,7 @@ INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
         printf("[Make Node] Error: Parent directory %s is invalid or doesn't exist!\n", par_path);
         //*inodeId = par_id;
         //return Err_mknod;
-        return par_id;
+        return err;
     }
 
     Inode par_inode;
@@ -734,24 +734,24 @@ INT Potato_unlink(FileSystem* fs, char* path){
     
     // find the inode id of the parent directory 
     
-    Potato_namei(fs, par_path, &par_id);
+    INT err = Potato_namei(fs, par_path, &par_id);
     
-    if(par_id < 0) { // parent directory does not exist
+    if(err < 0) { // parent directory does not exist
         printf("[Unlink] Directory %s not found!\n", par_path);
         //*inodeId = par_id;
-        return par_id;
+        return err;
     }
      
     Inode par_inode;
     Inode inode;
     
-    Potato_namei(fs, path, &id);
+    INT err = Potato_namei(fs, path, &id);
     
-    if(id < 0) { // file does not exist
+    if(err < 0) { // file does not exist
         printf("[Unlink] Error: file \"%s\" not found!\n", path);
         //*inodeId = id;
         //return Err_unlink;
-        return id;
+        return err;
     }
     
     
@@ -943,17 +943,17 @@ INT Potato_mkdir(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
     }
     
     // find the inode id of the parent directory
-    Potato_namei(fs, par_path, &par_id);
+    INT err = Potato_namei(fs, par_path, &par_id);
     printf("[mkdir] Potato_mkdir found parent directory inode id: %ld\n", par_id);
 
     // check if the parent directory exists
-    if(par_id < 0) {
+    if(err < 0) {
 //	_err_last = _fs_NonExistFile;
 //	THROW(__FILE__, __LINE__, __func__);
 		printf("[mkdir] Directory %s not found!\n", par_path);
 		//*inodeId = par_id;
         //return Err_mkdir;
-        return par_id;
+        return err;
     }
 
     Inode par_inode;
@@ -1113,13 +1113,13 @@ INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
 
 	//ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id)
 	//id = (INT)l2_namei(fs, path);
-	Potato_namei(fs, path, &id);
+	INT err = Potato_namei(fs, path, &id);
     
-    if(id < 0) { // directory does not exist
+    if(err < 0) { // directory does not exist
         printf("[Readdir] Directory %s not found!\n", path);
         //*inodeId = id;
         //return Err_readdir;
-        return id;
+        return err;
     }
     else {
         Inode i_node;
@@ -1163,12 +1163,12 @@ INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
 	//1. resolve path
     size_type INode_ID;
     //l2_namei(fs, path);
-    Potato_namei(fs, path, &INode_ID);
+    INT err = Potato_namei(fs, path, &INode_ID);
     
-    if (INode_ID < 0) {
+    if (err < 0) {
 		//*inodeId = INode_ID;
 		//return Err_chmod;
-		return INode_ID;
+		return err;
     }
     Inode curINode;
     
@@ -1242,10 +1242,10 @@ INT Potato_chown(FileSystem *fs, char *path, uid_t uid, gid_t gid){
 	//1. resolve path
 	size_type INodeID;
 	//INT INodeID = l2_namei(fs, path);
-	Potato_namei(fs, path, &INodeID);
-	if(INodeID < 0){ // CAUTION: need to check the return value of namei
+	INT err = Potato_namei(fs, path, &INodeID);
+	if(err < 0){ // CAUTION: need to check the return value of namei
 		printf("[chown] Error: fail to read dir\n");
-		return INodeID;
+		return err;
 	}
 	
 	Inode curINode;
@@ -1374,10 +1374,10 @@ INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
 	// ptr <- "/node_name"
 	char* node_name = strtok(ptr, "/");
 
-	Potato_namei(fs, parent_path, &parent_id);
-	if(parent_id == -1){ // CAUTION: need to check the return value of namei
+	INT err = Potato_namei(fs, parent_path, &parent_id);
+	if(err < 0){ // CAUTION: need to check the return value of namei
 		printf("Error: fail to read old parent dir\n");
-		return -1;
+		return err;
 	}
 
 	Inode* parent_node;
@@ -1418,8 +1418,12 @@ INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
 		strcpy(new_parent_path, "/");
 	}
 
-	Potato_namei(fs, new_parent_path, &new_parent_id);
-	Inode* new_parent_node;
+	INT err = Potato_namei(fs, new_parent_path, &new_parent_id);
+	if(err < 0){
+        printf("[Potato_rename] nami failed for new_parent_path.\n");
+        return err;
+    }
+    Inode* new_parent_node;
 	err = getInode(fs, &new_parent_id, new_parent_node);
 	assert(err == Success);
 
@@ -1497,9 +1501,9 @@ INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen) {
     size_type inode_id;
     Inode*    cur_inode;
     err = Potato_namei(fs, path_name, &inode_id);
-    if(inode_id < 0){
+    if(err < 0){
         printf("No such file\n"); // CAUTION: temporarily no error handling
-        return inode_id;
+        return err;
     }
 
     err = getInode(fs, &inode_id, cur_inode);
