@@ -9,7 +9,7 @@
 
 //by yan
 ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset);
-ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id);
+INT Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id);
 /*
  * open file
  * @flag: type of open, reading or writing, @modes give file permissions if the file is being created

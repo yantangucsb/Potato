@@ -229,10 +229,10 @@ ErrorCode Potato_bfree(FileSystem *fs, Inode *inode, size_type file_block_id){
  * path_name should be absolute path from mounting point
  * Error: NoInode
  */
-ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
+INT Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
 	printf("[Potato_namei] enter\n");
     if(path_name == 0){
-        return InodeNotExist;
+        return -ENOENT;
     }
 
     //check if it is open
@@ -240,7 +240,7 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
     getOpenFileEntry(&(fs->open_file_table), path_name, entry);
     if(entry != NULL){
         *inode_id = entry->inodeEntry->id;
-        return Success;
+        return 0;
     }
 
     //start from root directory
@@ -258,12 +258,12 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
         //get inode for current directory
         Inode inode;
         if(getInode(fs, inode_id, &inode) != Success){
-            return InodeNotExist;
+            return -ENOENT;
         }
 
         //check the file type
         if(inode.fileType != Directory){
-            return NotDirectory;
+            return -ENOTDIR;
         }
 
         //read in all inode data section
@@ -290,12 +290,12 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
         }
         free(buf);
         if(!foundEntry){
-            return InodeNotExist;
+            return -ENOENT;
         }
         
         token = strtok(NULL, "/");
     }
-    return Success;
+    return 0;
 }
 
 bool checkPermission(uint32_t permission, FileOp flag){
@@ -522,7 +522,8 @@ INT Potato_unmount(FileSystem* fs){
 
 
 // makes a new file
-INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
+INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
+    char *path = i_path;
 	printf("[Potato_mknod] enter\n");
 	size_type id; // the inode id of the mounted file system (child directory)
 	size_type par_id; // the inode id of the mount point (parent directory)
@@ -537,26 +538,26 @@ INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
 	size_type rRes;
 	
 	//ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id)
-	Potato_namei(fs, path, &rRes);
+	INT err = Potato_namei(fs, path, &rRes);
 	
-	if (rRes == -ENOTDIR ) {
+	if (err == -ENOTDIR ) {
 //        _err_last = _fs_NonDirInPath;
 //        THROW(__FILE__, __LINE__, __func__);
         //*inodeId = rRes;
         //return Err_mknod;
-        return rRes;
+        return err;
     }
     if (rRes > 0) {
         printf("[Make Node] Error: file or directory %s already exists!\n", path);
         return -EEXIST;
     }
     // find the last recurrence of '/'
-    char *ptr;
     int ch = '/';
-    ptr = strrchr(path, ch);
+    char* ptr = strrchr(path, ch);
     
     // ptr = "/dir_name"
-    char *dir_name = strtok(ptr, "/");
+    printf("[Potato_mknod] prt: %s\n", ptr);
+    char* dir_name = strtok(ptr, "/");
    
     strncpy(par_path, path, strlen(path) - strlen(ptr));
     par_path[strlen(path) - strlen(ptr)] = '\0';
@@ -569,10 +570,10 @@ INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     
     //find the inode id of the parent directory
 	//ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id)
-	Potato_namei(fs, par_path, &par_id);
+	err = Potato_namei(fs, par_path, &par_id);
 	
     // check if the parent directory exists
-    if(par_id < 0) {
+    if(err < 0) {
         printf("[Make Node] Error: Parent directory %s is invalid or doesn't exist!\n", par_path);
         //*inodeId = par_id;
         //return Err_mknod;
@@ -584,7 +585,7 @@ INT Potato_mknod(FileSystem* fs, char* path, uid_t uid, gid_t gid){
         
     // read the parent inode
     //ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode)    
-    if(getInode(fs, &par_id, &par_inode) == Success) {
+    if(getInode(fs, &par_id, &par_inode) != Success) {
         printf("[Make Node] Error: fail to read parent directory inode %ld\n", par_id);
         //return Err_mknod;
         return -1;
@@ -1564,7 +1565,7 @@ INT Potato_utimens(FileSystem *fs, char *path, struct timespec tv[2])
 	
     //readINode(fs, curINodeID, &curINode);
     Inode curINode;
-    if(getInode(fs, curINodeID, &curINode) != Success){
+    if(getInode(fs, &curINodeID, &curINode) != Success){
     	printf("[utimens] Error: failed to get Inode!\n");
     	return -1;
     }

@@ -24,6 +24,11 @@ int main(){
     struct stat root_stat;
     Potato_getattr(&fs, "/", &root_stat);
     printf("root inodeId: %ld\n root links: %ld, root size: %ld, root permission: %u\n", root_stat.st_ino, root_stat.st_nlink, root_stat.st_size, root_stat.st_mode);
+    
+    inode_id = Potato_mknod(&fs, "/hello", 0, 0);
+    Inode hello_inode;
+    getInode(&fs, &inode_id, &hello_inode);
+    printf("hello inode_id: %ld, filetype: %u", inode_id, hello_inode.fileType);
     return 1;
 
 }
