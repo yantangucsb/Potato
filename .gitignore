@@ -5,3 +5,5 @@ Layer1Test
 diskFile
 fuse_potato
 mkfs
+hello
+SyscallTest

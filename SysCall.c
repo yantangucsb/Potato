@@ -1205,7 +1205,8 @@ INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
 
     Inode i_node;
     //readINode(fs, INodeID, &i_node);
-	if(getInode(fs, &INodeID, &i_node) != Success){
+	printf("[Potato_getattr] inode id for %s: %ld\n", path, INodeID);
+    if(getInode(fs, &INodeID, &i_node) != Success){
 		printf("[getattr] Error: fail to read inode for file %s\n", path);
 		//return Err_readdir;
 		return -1;

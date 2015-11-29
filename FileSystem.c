@@ -81,8 +81,20 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     //Map superblock to superblockonDisk
     SuperBlockonDisk super_block_on_disk;
     mapSuperBlockonDisk(&(fs->super_block), &(super_block_on_disk));
-    put(fs, SUPER_BLOCK_OFFSET, &(super_block_on_disk));
-    
+    BYTE buf[BLOCK_SIZE];
+    memcpy(buf, &super_block_on_disk, sizeof(SuperBlockonDisk));
+    put(fs, SUPER_BLOCK_OFFSET, buf);
+
+    //test if load correctly for super block
+/*    readSuperBlock(fs);
+    printf("Test readSuperBlock()\n");
+    printSuperBlock(&(fs->super_block));
+*/
+    put(fs, SUPER_BLOCK_OFFSET, buf);
+    get(fs, fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListHeadBuf));
+    //printDisk(&(fs->disk_emulator), fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
+//    printf("read head buf from: %ld\n", fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
+    get(fs, fs->super_block.pDataFreeListTail+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListTailBuf));
     return Success;
 }
 
@@ -103,9 +115,11 @@ ErrorCode loadFS(FileSystem* fs) {
 }
 
 ErrorCode readSuperBlock(FileSystem* fs){
-    BYTE* buffer = malloc(BLOCK_SIZE);
-    get(fs, SUPER_BLOCK_OFFSET, buffer);
-    mapDisk2SuperBlockinMem((SuperBlockonDisk*) buffer, &(fs->super_block));
+    BYTE buffer[BLOCK_SIZE];
+    get(fs, SUPER_BLOCK_OFFSET, &buffer);
+    SuperBlockonDisk sb_on_disk;
+    memcpy(&sb_on_disk, buffer, sizeof(SuperBlockonDisk));
+    mapDisk2SuperBlockinMem(&sb_on_disk, &(fs->super_block));
 
     return Success;
 }

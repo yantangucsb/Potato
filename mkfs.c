@@ -7,11 +7,11 @@
 
 int main(){
     FileSystem fs;
-    size_type size = 0x7FFFFFF;
+    size_type size = 0x1FFF;
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
-    loadFS(&fs); 
-    
+    printFileSystem(&fs);
+
     Inode inode;
     size_type inode_id = ROOT_INODE_ID;
     if(getInode(&fs, &inode_id, &inode)!=Success){
@@ -20,7 +20,13 @@ int main(){
         return -1;
     }
 
-	//TODO is this right??
+    closefs(&fs);
+
+    FileSystem new_fs;
+    loadFS(&new_fs);
+    printFileSystem(&new_fs);
+	
+/*    loadFS(&fs);
     //allocate a block to root directory
     size_type block_id;
     allocBlock(&fs, &block_id);
@@ -49,8 +55,18 @@ int main(){
     put(&fs, fs.super_block.pDataFreeListHead + fs.super_block.firstDataBlockId, &(fs.dataBlockFreeListHeadBuf));
     put(&fs, fs.super_block.pDataFreeListTail + fs.super_block.firstDataBlockId, &(fs.dataBlockFreeListTailBuf));
 
+    
+    SuperBlockonDisk super_block_on_disk;
+    mapSuperBlockonDisk(&(fs.super_block), &(super_block_on_disk));
+    memcpy(buf, &super_block_on_disk, sizeof(SuperBlockonDisk));
+    put(&fs, SUPER_BLOCK_OFFSET, buf);
     //set root acess time
 
-    closefs(&fs);
+    closefs(&fs);*/
+/*
+    FileSystem new_fs;
+    loadFS(&new_fs);
+    printFileSystem(&new_fs);
+  */  
     return 0;
 }

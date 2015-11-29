@@ -27,7 +27,7 @@ ErrorCode initSuperBlock(size_type size, size_type percen, SuperBlock* super_blo
 
     //initialize the free inode list cache
     super_block->freeInodeIndex = num_of_free_inodes > FREE_INODE_NUM? FREE_INODE_NUM - 1: num_of_free_inodes;
-    int i = super_block->freeInodeIndex;
+    size_type i = super_block->freeInodeIndex;
 
     //inode 0 is reserved for root directory
     //This should be done in initFS
@@ -53,8 +53,9 @@ ErrorCode mapSuperBlockonDisk(SuperBlock* super_block, SuperBlockonDisk* sb_on_d
     sb_on_disk->inodeListSize = super_block->inodeListSize;
     sb_on_disk->numOfFreeInodes = super_block->numOfFreeInodes;
     size_type i;
-    for(i=0; i<FREE_INODE_NUM; i++){
+    for(i=FREE_INODE_NUM-1; i>=0; i--){
         sb_on_disk->freeInodeList[i] = super_block->freeInodeList[i];
+        printf("free list inode no: %ld\n", sb_on_disk->freeInodeList[i]);
     }
     
     sb_on_disk->freeInodeIndex = super_block->freeInodeIndex;
@@ -70,8 +71,9 @@ ErrorCode mapDisk2SuperBlockinMem(SuperBlockonDisk* sb_on_disk, SuperBlock* supe
     super_block->inodeListSize = sb_on_disk->inodeListSize;
     super_block->numOfFreeInodes = sb_on_disk->numOfFreeInodes;
     size_type i;
-    for(i=0; i<FREE_INODE_NUM; i++){
+    for(i=FREE_INODE_NUM-1; i>=0; i--){
         super_block->freeInodeList[i] = sb_on_disk->freeInodeList[i];
+        printf("free list inode no (load): %ld\n", super_block->freeInodeList[i]);
     }
     
     super_block->freeInodeIndex = sb_on_disk->freeInodeIndex;
