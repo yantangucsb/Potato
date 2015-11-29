@@ -6,6 +6,7 @@
 #include "sys/types.h"
 
 
+
 //by yan
 ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset);
 ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id);
@@ -32,6 +33,12 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid);
 INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry);
 //change mode
 INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission);
+// getattr
+INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf);
+//1. resolve path and read inode
+//2. check uid/gid
+//3. set uid/gid and write inode
+INT Potato_chown(FileSystem *fs, char *path, uid_t uid, gid_t gid);
 
 
 

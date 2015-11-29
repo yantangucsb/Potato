@@ -266,22 +266,26 @@ ErrorCode InitInode(Inode* inode){
 	inode->fileSize=0;
 	
 	//time initialization
-	time_t current_time;
-	char* c_time_string;
-	current_time = time(NULL);
-	if (current_time == ((time_t)-1)){
-		printf("[Initialize Inode] Failure to compute the current time.\n");
-		return Err_InitInode;
-	}
-	c_time_string = ctime(&current_time);
-    if (c_time_string == NULL)
-    {
-        printf("[Initialize Inode] Failure to convert the current time.\n");
-        return Err_InitInode;
-    }
-    strcpy (inode->fileModifiedTime, c_time_string);
-    strcpy (inode->fileAccessTime, c_time_string);
-    strcpy (inode->inodeModifiedTime, c_time_string);
+	//time_t current_time;
+	//char* c_time_string;
+	//current_time = time(NULL);
+	//if (current_time == ((time_t)-1)){
+	//	printf("[Initialize Inode] Failure to compute the current time.\n");
+	//	return Err_InitInode;
+	//}
+	//c_time_string = ctime(&current_time);
+    //if (c_time_string == NULL)
+    //{
+    //   printf("[Initialize Inode] Failure to convert the current time.\n");
+    //    return Err_InitInode;
+    //}
+    //strcpy (inode->fileModifiedTime, c_time_string);
+    //strcpy (inode->fileAccessTime, c_time_string);
+    //strcpy (inode->inodeModifiedTime, c_time_string);
+	
+	inode->fileModifiedTime = time(NULL);
+	inode->fileAccessTime = time(NULL);
+	inode->inodeModifiedTime = time(NULL);
 	
 	int i=0;
 	for (i=0;i<DIRECT_BLOCK_NUM;i++)

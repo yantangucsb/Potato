@@ -1045,8 +1045,8 @@ INT Potato_mkdir(FileSystem* fs, char* path, uid_t uid, gid_t gid){
     // change the inode type to directory
     inode.fileType = Directory;
     
-//    inode._in_uid = uid;
-//    inode._in_gid = gid;
+    inode._in_uid = uid;
+    inode._in_gid = gid;
     struct passwd *ppwd = getpwuid(uid);
     strcpy(inode.fileOwner, ppwd->pw_name);
 	
@@ -1123,8 +1123,6 @@ INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
     return 0;
 }
 
-//TODO
-//MODE???
 //change mode
 INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
 	//1. resolve path
@@ -1164,6 +1162,77 @@ INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
     return 0;
 }
 
+
+// getattr
+INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
+	size_type INodeID;
+	//size_type INodeID = l2_namei(fs, path);
+	Potato_namei(fs, path, &INodeID);
+	if(INodeID < 0){ // CAUTION: need to check the return value of namei
+		printf("[getattr] Error: fail to read old parent dir\n");
+		return INodeID;
+	}
+
+    Inode i_node;
+    //readINode(fs, INodeID, &i_node);
+	if(getInode(fs, &INodeID, &i_node) != Success){
+		printf("[getattr] Error: fail to read inode for file %s\n", path);
+		//return Err_readdir;
+		return -1;
+	}
+	
+    stbuf->st_dev = 0;
+    stbuf->st_ino = INodeID;
+    stbuf->st_mode = i_node.Permission;
+    stbuf->st_nlink = i_node.numOfLinks;
+    stbuf->st_uid = i_node._in_uid;
+    stbuf->st_gid = i_node._in_gid;
+    stbuf->st_size = i_node.fileSize;
+    stbuf->st_blksize = BLOCK_SIZE;
+    stbuf->st_blocks = i_node.fileSize / BLOCK_SIZE;
+    stbuf->st_atime = i_node.fileAccessTime;
+    stbuf->st_mtime = i_node.fileModifiedTime;
+    stbuf->st_ctime = i_node.inodeModifiedTime;
+    return 0;
+}
+
+//1. resolve path and read inode
+//2. check uid/gid
+//3. set uid/gid and write inode
+INT Potato_chown(FileSystem *fs, char *path, uid_t uid, gid_t gid){
+
+	//1. resolve path
+	size_type INodeID;
+	//INT INodeID = l2_namei(fs, path);
+	Potato_namei(fs, path, &INodeID);
+	if(INodeID < 0){ // CAUTION: need to check the return value of namei
+		printf("[chown] Error: fail to read dir\n");
+		return INodeID;
+	}
+	
+	Inode curINode;
+	
+    //readINode(fs, INodeID, &curINode) == -1
+	if(getInode(fs, &INodeID, &curINode) != Success){
+		printf("[chown] Error: fail to read inode for file %s\n", path);
+		//return Err_readdir;
+		return -1;
+	}	
+    
+    //2. check uid/gid
+    //3. set owner
+    curINode._in_uid = uid;
+    curINode._in_gid = gid;
+    
+    //ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode)
+    //writeINode(fs, INodeID, &curINode);
+    ErrorCode err_putInode = putInode(fs, &INodeID, &curINode);
+    if (err_putInode != Success){
+    	printf("[chown] Error: failed to put Inode!\n");
+    	return -1;
+    }
+    return 0;
+}
 
 INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes){
 
