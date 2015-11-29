@@ -91,7 +91,7 @@ typedef enum {
 #define FILE_PATH_LENGTH 512 //maximum length of the path
 
 //disk partition path
-#define DISK_PATH "diskFile"
+#define DISK_PATH "/dev/vdc"
 
 #define MAX_FILE_SIZE (BLOCK_SIZE * DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE * S_DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE * D_DIRECT_BLOCK_NUM + BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE / sizeof(size_type) * BLOCK_SIZE * T_DIRECT_BLOCK_NUM)
 #define MAX_FILE_BLKS (MAX_FILE_SIZE / BLOCK_SIZE) //max number of data blocks allocatable per file
