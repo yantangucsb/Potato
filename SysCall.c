@@ -454,8 +454,8 @@ INT Potato_mount(FileSystem* fs){
 		//return Err_initInodeTable;
 		return -1;
 	}
-	
-    //create root directory for mounted FileSystem
+*/	
+/*    //create root directory for mounted FileSystem
     Inode inode;
     size_type inode_id = ROOT_INODE_ID;
     if(getInode(fs, &inode_id, &inode)!=Success){
@@ -463,15 +463,27 @@ INT Potato_mount(FileSystem* fs){
         //return Err_GetInode;
         return -1;
     }
-	
+
 	//TODO is this right??
     //allocate a block to root directory
     size_type block_id;
     allocBlock(fs, &block_id);
     inode.directBlock[0] = block_id;
     inode.fileType = Directory;
-	*/
-	return 0;
+    inode.used = true;
+    inode.Permission = 0x777;
+
+    DirEntry dir_entry[2];
+    strcpy(dir_entry[0], ".");
+    dir_entry[0].inodeId = ROOT_INODE_ID;
+    strcpy(dir_entry[1], "..");
+    dir_entry[1].inodeId = ROOT_INODEI_ID;
+
+    BYTE buf[BLOCK_SIZE];
+    memcpy(buf, dir_entry, sizeof(dir_entry));
+    put(fs, block_id + fs->super_block.firstDataBlockId, buf);
+*/
+    return 0;
 }
 
 // unmounts a filesystem into a device

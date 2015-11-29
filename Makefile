@@ -7,7 +7,9 @@ OBJS=SysCall.o OpenFileTable.o DataBlockAccess.o InodeAccess.o DiskEmulator.o Fi
 USEFLAGS=`pkg-config fuse --cflags --libs`
 SRCS=DiskEmulator.c
 
-all: init test fuse
+all: mkfs init test fuse
+
+mkfs: $(OBJS) mkfs
 
 init: $(OBJS) InitFSTest
 
@@ -15,6 +17,9 @@ test: $(OBJS) Layer0Test Layer1Test
 
 fuse: $(OBJS) fuse_potato
 
+mksf: $(OBJS) mkfs.o
+	$(CC) $(CFLAGS) -o $@ $^
+	
 Layer1Test: $(OBJS) Layer1Test.o
 	$(CC) $(CFLAGS) -o $@ $^
 
