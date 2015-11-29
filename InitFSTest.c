@@ -12,6 +12,8 @@ int main(int argc, char *argv[]){
     size_type size = 0x7FFFFFF;
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
+    loadFS(&fs);
+
 //    printDisk(&(fs.disk_emulator), 0);
     printf("size of Inode: %lu\n", sizeof(Inode));
     printf("size of SuperBlock: %lu\n", sizeof(SuperBlock));

@@ -276,7 +276,7 @@ ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
         bool foundEntry = false;
         size_type curSize = 0;
         while(curSize < inode.fileSize){
-            printf("[namei] cur file/dir name is : %s\n", dir_entry->key);
+            printf("[namei] cur file/dir name is : %s, inode id: %ld\n", dir_entry->key, dir_entry->inodeId);
             if(strcmp(dir_entry->key, token) == 0 && dir_entry->inodeId != -1){
                 *inode_id = dir_entry->inodeId;
                 foundEntry = true;

@@ -15,6 +15,7 @@ void testNamei(){
     size_type size = 0x7FFFFFF;
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
+    loadFS(&fs);
    
     initOpenFileTable(&(fs.open_file_table));
     initInodeTable(&(fs.inode_table));
@@ -29,6 +30,7 @@ void testNamei(){
     //allock a block to root directory
     size_type block_id;
     allocBlock(&fs, &block_id);
+    printf("[Layer1Test] alloc block %ld to root directory\n", block_id);
     inode.directBlock[0] = block_id;
     inode.fileType = Directory;
 
@@ -111,8 +113,9 @@ void testNamei(){
     putInode(&fs, &sec1_inodeId, &sec1_inode);
 
     size_type readbyte;
-/*      
+      
     //test if write successfully
+    printf("[Layer1Test] test write: block id %ld\n",inode.directBlock[0]); 
     get(&fs, inode.directBlock[0] + fs.super_block.firstDataBlockId, buf);
     DirEntry* cur_entry = (DirEntry*) buf;
     size_type curSize = 0;
@@ -134,7 +137,7 @@ void testNamei(){
         cur_entry++;
         curSize += sizeof(DirEntry);
     }
-*/
+
     free(buf);
 
     //test cases for namei
