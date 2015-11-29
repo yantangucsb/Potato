@@ -90,7 +90,6 @@ ErrorCode initFS(size_type size, size_type percen, FileSystem* fs){
     printf("Test readSuperBlock()\n");
     printSuperBlock(&(fs->super_block));
 */
-    put(fs, SUPER_BLOCK_OFFSET, buf);
     get(fs, fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId, &(fs->dataBlockFreeListHeadBuf));
     //printDisk(&(fs->disk_emulator), fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
 //    printf("read head buf from: %ld\n", fs->super_block.pDataFreeListHead+fs->super_block.firstDataBlockId);
@@ -116,7 +115,8 @@ ErrorCode loadFS(FileSystem* fs) {
 
 ErrorCode readSuperBlock(FileSystem* fs){
     BYTE buffer[BLOCK_SIZE];
-    get(fs, SUPER_BLOCK_OFFSET, &buffer);
+    get(fs, SUPER_BLOCK_OFFSET, buffer);
+    printDisk(&(fs->disk_emulator), SUPER_BLOCK_OFFSET);
     SuperBlockonDisk sb_on_disk;
     memcpy(&sb_on_disk, buffer, sizeof(SuperBlockonDisk));
     mapDisk2SuperBlockinMem(&sb_on_disk, &(fs->super_block));

@@ -39,5 +39,5 @@ fuse_potato: $(OBJS) fuse_potato.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -fr *.o Layer0Test InitFSTest InitFSTest mkfs fuse_potato
+	rm -fr *.o Layer0Test InitFSTest InitFSTest mkfs fuse_potato SyscallTest
 

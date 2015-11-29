@@ -10,7 +10,9 @@ int main(){
     size_type size = 0x1FFF;
     printf("system size set to: %ld\n", size);
     initFS(size, 20, &fs);
+    loadFS(&fs);
     printFileSystem(&fs);
+//    printDisk(&(fs.disk_emulator), 0);
 
     Inode inode;
     size_type inode_id = ROOT_INODE_ID;
@@ -24,6 +26,7 @@ int main(){
 
     FileSystem new_fs;
     loadFS(&new_fs);
+//    printDisk(&(fs.disk_emulator), 0);
     printFileSystem(&new_fs);
 	
 /*    loadFS(&fs);

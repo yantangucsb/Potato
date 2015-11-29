@@ -55,7 +55,7 @@ ErrorCode mapSuperBlockonDisk(SuperBlock* super_block, SuperBlockonDisk* sb_on_d
     size_type i;
     for(i=FREE_INODE_NUM-1; i>=0; i--){
         sb_on_disk->freeInodeList[i] = super_block->freeInodeList[i];
-        printf("free list inode no: %ld\n", sb_on_disk->freeInodeList[i]);
+        //printf("free list inode no: %ld\n", sb_on_disk->freeInodeList[i]);
     }
     
     sb_on_disk->freeInodeIndex = super_block->freeInodeIndex;
@@ -73,7 +73,7 @@ ErrorCode mapDisk2SuperBlockinMem(SuperBlockonDisk* sb_on_disk, SuperBlock* supe
     size_type i;
     for(i=FREE_INODE_NUM-1; i>=0; i--){
         super_block->freeInodeList[i] = sb_on_disk->freeInodeList[i];
-        printf("free list inode no (load): %ld\n", super_block->freeInodeList[i]);
+        //printf("free list inode no (load): %ld\n", super_block->freeInodeList[i]);
     }
     
     super_block->freeInodeIndex = sb_on_disk->freeInodeIndex;
