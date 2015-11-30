@@ -420,7 +420,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     	
     	ErrorCode err_bmap = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
         printf("[readInodeData] cur start block: %ld, offset: %ld\n", block_no, block_offset);
-    	if (err_bmp == Success && block>=0){    	    	
+    	if (err_bmap == Success && block_no>=0){    	    	
     		//get() is defined in FileSystem.c
     		ErrorCode err_get = get(fs, block_no + fs->super_block.firstDataBlockId, data_block_buffer);
     		if (err_get == Success){
