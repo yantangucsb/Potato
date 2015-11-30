@@ -25,8 +25,16 @@ int main(){
     //allocate a block to root directory
     size_type block_id;
     allocBlock(&fs, &block_id);
-    inode.directBlock[0] = block_id;
     inode.fileType = Directory;
+    size_type i = 0;
+    for(i=0; i<DIRECT_BLOCK_NUM; i++){
+        inode.directBlock[i] = -1;
+    }
+    inode.singleBlock = -1;
+    inode.doubleBlock = -1;
+    inode.tripleBlock = -1;
+    
+    inode.directBlock[0] = block_id;
     inode.used = true;
     strcpy(inode.fileOwner, "NULL");
     inode.fileModifiedTime = time(NULL);

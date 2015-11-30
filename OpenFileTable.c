@@ -106,6 +106,29 @@ ErrorCode removeOpenFileEntry(OpenFileTable* open_file_table, char* path_name) {
     return NoFreeDataBlock; // need to assign a new enum entry, however, it works anyway.
 }
 
+ErrorCode removeInodeEntry(InodeTable* inode_table, size_type id){
+    if(inode_table->head != NULL && inode_table->head->id == id){
+        InodeEntry* tmp = inode_table->head;
+        inode_table->head = inode_table->head->next;
+        free(tmp);
+        return Success;
+    }
+    if(inode_table->head == NULL)
+        return InodeNotExist;
+    InodeEntry* pre = inode_table->head;
+    InodeEntry* entry = inode_table->head->next;
+    while(entry != NULL){
+        if(entry->id == id){
+            pre->next = entry->next;
+            free(entry);
+            return Success;
+        }
+        pre =entry;
+        entry = entry->next;
+    }
+    return InodeNotExist;
+}
+
 void freeOpenFileTable(OpenFileTable* open_file_table){
     OpenFileEntry* cur_entry = open_file_table->head;
     while(cur_entry != NULL){

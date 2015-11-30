@@ -325,6 +325,7 @@ ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode){
 		return Success;	
 	}
 	else{
+        printf("[getInode] get inode block %ld failed.\n", block_no);
 		free(data_block_buffer);
 		return Err_GetInode;
 	}
@@ -379,7 +380,7 @@ void PrintInfo(SuperBlock* super, size_type* inodeId){
 	return;
 }
 
-
+/*
 ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* readbyte){
     //read the data refered by inode from disk to buffer (from start to start+size-1), inode is already in memory
     //Input is FileSystem* fs, Inode* inode , size_type start, size_type size
@@ -450,7 +451,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     				if (flag == 0){
     					//the first chunk
     					memcpy(data_out_pt, &data_pt[block_offset], end-start+1);
-    					/*
+    					
                         //test if copy corretly for directory only - Yan 
                         DirEntry* entry = (DirEntry*) &data_pt[block_offset];
                         size_type entry_size = 0;
@@ -459,7 +460,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
                             entry++;
                             entry_size+=sizeof(DirEntry);
                         }
-                        */
+                        
 
                         //update start position (quit while)
     					start = start + BLOCK_SIZE;
@@ -488,7 +489,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     printf("[Read Inode Data] Success!\n");
     return Success;
 }
-
+*/
 
 
 
@@ -602,6 +603,11 @@ ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type star
 
 ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type off, size_type size, size_type* writebyte){
     assert(off < MAX_FILE_SIZE);
+/*    size_type i = 0;
+    for(i=0; i<size; i++){
+        printf("%c", *(buf+i));
+    }
+  */  
     size_type byteswritten = 0;
     size_type start = off;
     while(byteswritten < size){
@@ -609,7 +615,7 @@ ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type off,
         size_type b_offset;
         size_type len;
         ErrorCode err = Potato_bmap(fs, inode, &start, &b_id, &b_offset);
-        if(err == Success && b_id != -1){
+        if(err == Success && b_id > 0){
             
             len = size - byteswritten < BLOCK_SIZE-b_offset? size-byteswritten:BLOCK_SIZE-b_offset;
             printf("[writeInodeData] write block %ld, offset %ld, len %ld\n", b_id, b_offset, len);
@@ -638,3 +644,35 @@ ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type off,
 }
 
 
+ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type off, size_type read_size, size_type* readbyte){
+
+    size_type bytesread = 0;
+    size_type start = off;
+    size_type size =read_size;
+    if(start+read_size>inode->fileSize)
+        size = inode->fileSize-start;
+    while(bytesread < size){
+        size_type b_id;
+        size_type b_offset;
+        size_type len;
+        ErrorCode err = Potato_bmap(fs, inode, &start, &b_id, &b_offset);
+        if(err == Success && b_id > 0){
+            
+            len = size - bytesread < BLOCK_SIZE-b_offset? size-bytesread:BLOCK_SIZE-b_offset;
+            printf("[readInodeData] write block %ld, offset %ld, len %ld\n", b_id, b_offset, len);
+            err = readDataBlock(fs, b_id, buf+bytesread, b_offset, len);
+            if(err != Success){
+                return err;
+            }
+        }else{
+            printf("[readInodeData] bmap failed.\n");
+            return err;
+        
+        }
+        printf("bytesread %d\n", bytesread);
+        bytesread += len;
+        start+= len;
+    }
+    *readbyte = bytesread;
+    return Success;
+}

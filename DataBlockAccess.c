@@ -91,6 +91,10 @@ ErrorCode writeDataBlock(FileSystem* fs, size_type block_no, BYTE* buf, size_typ
     assert(start < BLOCK_SIZE);
     assert(start + size <= BLOCK_SIZE);
 
+    size_type i = 0;
+    for(i=0; i<size; i++){
+        printf("%c", *(buf+i));
+    }
     BYTE writeBuf[BLOCK_SIZE];
 
     if(get(fs, block_no + fs->super_block.firstDataBlockId, writeBuf) != Success){

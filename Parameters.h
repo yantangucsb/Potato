@@ -41,7 +41,8 @@ typedef enum {
     Err_hasINodeEntry = 23,
     Err_mkdir = 24,
     Err_readdir = 25,
-    Err_chmod = 26
+    Err_chmod = 26,
+    Err_DataBlockNotExist = 27
 } ErrorCode;
 
 typedef enum {

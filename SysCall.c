@@ -20,6 +20,8 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
     if(*offset < curSize){
         size_type index = *offset/BLOCK_SIZE;
         *block_no = inode->directBlock[index];
+        if(*block_no < 0)
+            return Err_DataBlockNotExist;
         *block_offset = *offset % BLOCK_SIZE;
         return Success;
     }
@@ -28,10 +30,15 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
 
     //if the offset is in singleBlock
     if(*offset < curSize){
+        if(inode->singleBlock < 0)
+            return Err_DataBlockNotExist;
         size_type* block = malloc(BLOCK_SIZE);
         get(fs, inode->singleBlock+fs->super_block.firstDataBlockId, block);
         size_type index = (*offset - preSize)/BLOCK_SIZE;
         *block_no = *(block+index);
+        
+        if(*block_no < 0)
+            return Err_DataBlockNotExist;
         *block_offset = (*offset - preSize) % BLOCK_SIZE;
         free(block);
         return Success;
@@ -42,13 +49,19 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
     
     //if the offset is in doubleBlock
     if(*offset < curSize){
+        if(inode->doubleBlock < 0)
+            return Err_DataBlockNotExist;
         size_type* block = malloc(BLOCK_SIZE);
         get(fs, inode->doubleBlock+fs->super_block.firstDataBlockId, block);
         size_type index = (*offset - preSize)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
         *block_no = *(block+index);
+        if(*block_no < 0)
+            return Err_DataBlockNotExist;
         get(fs, *block_no+fs->super_block.firstDataBlockId, block);
         index = (*offset - preSize - index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE)/BLOCK_SIZE;
         *block_no = *(block+index);
+        if(*block_no < 0)
+            return Err_DataBlockNotExist;
         *block_offset = (*offset - preSize) % BLOCK_SIZE;
         free(block);
 
@@ -60,21 +73,29 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
 
     //if the offset is in tripleBlock
     if(*offset < curSize){
+        if(inode->tripleBlock<0)
+            return Err_DataBlockNotExist;
         size_type* block = malloc(BLOCK_SIZE);
         get(fs, inode->tripleBlock+fs->super_block.firstDataBlockId, block);
         size_type index = (*offset - preSize)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
         printf("tripleBlock index: %ld\n", index);
         *block_no = *(block+index);
+        if(*block_no < 0)
+            return Err_DataBlockNotExist;
         get(fs, *block_no+fs->super_block.firstDataBlockId, block);
         preSize += index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
         index = (*offset - preSize)/(BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE);
         printf("doubleBlock index: %ld\n", index);
         *block_no = *(block+index);
+        if(*block_no < 0)
+            return Err_DataBlockNotExist;
         get(fs, *block_no+fs->super_block.firstDataBlockId, block);
         preSize += index*BLOCK_SIZE/sizeof(size_type)*BLOCK_SIZE;
         index = (*offset - preSize)/BLOCK_SIZE;
         printf("singleBlock index: %ld\n", index);
         *block_no = *(block+index);
+        if(*block_no < 0)
+            return Err_DataBlockNotExist;
         *block_offset = (*offset - preSize)%BLOCK_SIZE;
         
         free(block);
@@ -85,13 +106,11 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
 }
 
 INT Potato_balloc(FileSystem* fs, Inode* inode, size_type logic_id, size_type *b_id){
+    printf("[balloc] enter for plate block %ld\n", logic_id);
     ErrorCode err;
     size_type off;
     size_type buf[BLOCK_SIZE/sizeof(size_type)];
     memset(buf, -1, sizeof(BLOCK_SIZE));
-    size_type pos = logic_id*BLOCK_SIZE;
-    if(Potato_bmap(fs, inode, &pos, b_id, &off))
-        return 0;
     
     if(logic_id < DIRECT_BLOCK_NUM){
        err = allocBlock(fs, b_id);
@@ -713,7 +732,7 @@ INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
         //return Err_mknod;
         return err;
     }
-    if (err == 0) {
+    if (err == 0 && rRes > 0) {
         printf("[Make Node] Error: file or directory %s already exists!\n", path);
         return -EEXIST;
     }
@@ -925,7 +944,7 @@ INT Potato_unlink(FileSystem* fs, char* i_path){
     
     // read the parent inode
     //ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode)    
-    if(getInode(fs, &par_id, &par_inode) == Success) {
+    if(getInode(fs, &par_id, &par_inode) != Success) {
         printf("[Unlink] Error: fail to read parent directory inode %ld\n", par_id);
         //return Err_unlink;
         return -1;
@@ -934,8 +953,8 @@ INT Potato_unlink(FileSystem* fs, char* i_path){
         
     // read the file inode
     //ErrorCode getInode(FileSystem* fs, size_type* inodeId, Inode* inode)    
-    if(getInode(fs, &id, &inode) == Success) {
-        printf("[Unlink] Error: fail to read to-be-unlinked file inode %ld\n", par_id);
+    if(getInode(fs, &id, &inode) != Success) {
+        printf("[Unlink] Error: fail to read to-be-unlinked file inode %ld\n", id);
         //return Err_unlink;
         return -1;
     }    
@@ -1660,10 +1679,12 @@ INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
     inode_entry->ref--;
     // remove the entry if opcount reaches 0
     if(inode_entry->ref == 0) {
-        ErrorCode err = removeOpenFileEntry(&(fs->open_file_table), path_name);
+        ErrorCode err = removeInodeEntry(&(fs->inode_table), inode_entry->id);
         assert(err == Success);
         //CAUTION: if the number of link is 0, no ops here.
     }
+    ErrorCode err = removeOpenFileEntry(&(fs->open_file_table), path_name);
+    assert(err == Success);
     return 0;
 }
 
