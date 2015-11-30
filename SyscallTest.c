@@ -52,5 +52,9 @@ int main(){
     Potato_write(&fs, "/hello", 0, str, sizeof(str));
     printOpenFileTable(&(fs.open_file_table));
     printInodeTable(&(fs.inode_table));
+
+    struct stat dir1_stat;
+    Potato_mkdir(&fs, "/dir/dir1", 0, 0);
+    Potato_getattr(&fs, "/dir/dir1", &dir1_stat);
     return 1;
 }

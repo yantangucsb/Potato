@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <string.h>
-
+#include <assert.h>
 #include "InodeAccess.h"
 #include "SysCall.h"
 
@@ -360,7 +360,7 @@ ErrorCode putInode(FileSystem* fs, size_type* inodeId, Inode* inode){
 		}
 		else{
 			free(data_block_buffer);
-			printf("putInode failed. Error %ld", err_put);
+			printf("putInode failed. Error %d", err_put);
             return Err_PutInode;
 		}
 	}
@@ -418,9 +418,9 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     	//ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset)
     	//defined in Syscall.c
     	
-    	ErrorCode err_readinodedata = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
+    	ErrorCode err_bmap = Potato_bmap(fs, inode, &start, &block_no, &block_offset);
         printf("[readInodeData] cur start block: %ld, offset: %ld\n", block_no, block_offset);
-    	if (err_readinodedata == Success){    	    	
+    	if (err_bmp == Success && block>=0){    	    	
     		//get() is defined in FileSystem.c
     		ErrorCode err_get = get(fs, block_no + fs->super_block.firstDataBlockId, data_block_buffer);
     		if (err_get == Success){
@@ -481,7 +481,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
     	else{
     		printf("[Read Inode Data] Error calling bmap\n");
     		free(data_block_buffer);
-    		return err_readinodedata;
+    		return -1;
     	}
     }
     free(data_block_buffer);
@@ -492,7 +492,7 @@ ErrorCode readInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start
 
 
 
-
+/*
 ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size, size_type* writebyte){
     //write the data refered by inode from buffer to disk (from start to start+size-1), inode is already in memory
     //Input is FileSystem* fs, Inode* inode, BYTE* buf, size_type start, size_type size
@@ -598,8 +598,43 @@ ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type star
     printf("[Write Inode Data] Success!\n");
     return Success;
 }
+*/
 
-
-
+ErrorCode writeInodeData(FileSystem* fs, Inode* inode, BYTE* buf, size_type off, size_type size, size_type* writebyte){
+    assert(off < MAX_FILE_SIZE);
+    size_type byteswritten = 0;
+    size_type start = off;
+    while(byteswritten < size){
+        size_type b_id;
+        size_type b_offset;
+        size_type len;
+        ErrorCode err = Potato_bmap(fs, inode, &start, &b_id, &b_offset);
+        if(err == Success && b_id != -1){
+            
+            len = size - byteswritten < BLOCK_SIZE-b_offset? size-byteswritten:BLOCK_SIZE-b_offset;
+            printf("[writeInodeData] write block %ld, offset %ld, len %ld\n", b_id, b_offset, len);
+            err = writeDataBlock(fs, b_id, buf, b_offset, len);
+            if(err != Success){
+                return err;
+            }
+        }else{
+            ErrorCode err = Potato_balloc(fs, inode, start/BLOCK_SIZE, &b_id);
+            printf("[writeInodeData] cur b_id: %ld\n", b_id);
+            if(err != Success)
+                return err;
+            b_offset = start%BLOCK_SIZE;
+            len = size - byteswritten < BLOCK_SIZE-b_offset? size-byteswritten:BLOCK_SIZE-b_offset;
+            err = writeDataBlock(fs, b_id, buf, b_offset, len);
+            if(err != Success)
+                return err;
+        }
+        byteswritten += len;
+        start+= len;
+        buf+=len;
+    }
+    *writebyte = byteswritten;
+    inode->fileSize = off+size>inode->fileSize? off+size: inode->fileSize;
+    return Success;
+}
 
 

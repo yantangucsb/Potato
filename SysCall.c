@@ -12,7 +12,7 @@
 
 
 ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset) {
-    printf("[Potato_bmap] enter\n");
+//    printf("[Potato_bmap] enter\n");
     printf("[Potato_bmap] Get block_id for offset %ld\n", *offset);
 
     size_type curSize = DIRECT_BLOCK_NUM*BLOCK_SIZE;
@@ -84,6 +84,144 @@ ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type
     return OutOfBound;
 }
 
+INT Potato_balloc(FileSystem* fs, Inode* inode, size_type logic_id, size_type *b_id){
+    ErrorCode err;
+    size_type off;
+    size_type buf[BLOCK_SIZE/sizeof(size_type)];
+    memset(buf, -1, sizeof(BLOCK_SIZE));
+    size_type pos = logic_id*BLOCK_SIZE;
+    if(Potato_bmap(fs, inode, &pos, b_id, &off))
+        return 0;
+    
+    if(logic_id < DIRECT_BLOCK_NUM){
+       err = allocBlock(fs, b_id);
+       if(err != Success){
+           return -1;
+       }
+       inode->directBlock[logic_id] = *b_id;
+       return 0;
+    }
+    size_type numEntry = BLOCK_SIZE/sizeof(size_type);
+    size_type pre = DIRECT_BLOCK_NUM;
+    size_type curNum = pre + numEntry;
+    if(logic_id < curNum){
+        if(inode->singleBlock == -1){
+            size_type s_id;
+            err = allocBlock(fs, &s_id);
+            if(err != Success)
+                return -1;
+            inode->singleBlock = s_id;
+            writeDataBlock(fs, s_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            
+            err = allocBlock(fs, b_id);
+            if(err != Success)
+                return -1;
+            err = writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id- pre)*sizeof(size_type), sizeof(size_type));
+            if(err != Success)
+                return -1;
+            return 0;
+        }
+        err = allocBlock(fs, b_id);
+        if(err != Success)
+            return -1;
+        err = writeDataBlock(fs, inode->singleBlock, (BYTE*)b_id, (logic_id-pre)*sizeof(size_type), sizeof(size_type));
+        if(err != Success)
+            return -1;
+        return 0;
+    }
+    pre = curNum;
+    curNum += numEntry*numEntry;
+    if(logic_id < curNum){
+        if(inode->doubleBlock == -1){
+            size_type d_id;
+            err = allocBlock(fs, &d_id);
+            if(err != Success)
+                return -1;
+            inode->doubleBlock = d_id;
+            writeDataBlock(fs, d_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            size_type s_id;
+            err = allocBlock(fs, &s_id);
+            if(err != Success)
+                return -1;
+            err = writeDataBlock(fs, d_id, (BYTE*)&s_id, (logic_id- pre)/numEntry*sizeof(size_type), sizeof(size_type));
+            if(err != Success)
+                return -1;
+            writeDataBlock(fs, s_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            err = allocBlock(fs, b_id);
+            if(err != Success)
+                return -1;
+            err = writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id - pre)%numEntry*sizeof(size_type), sizeof(size_type));
+            if(err != Success)
+                return -1;
+            return 0;
+        }else{
+            size_type s_id;
+            err = readDataBlock(fs, inode->doubleBlock, (BYTE*)&s_id, (logic_id-pre)/numEntry*sizeof(size_type), sizeof(size_type));
+            if(s_id == -1){
+                allocBlock(fs, &s_id);
+                
+                err = writeDataBlock(fs, inode->doubleBlock, (BYTE*)&s_id, (logic_id-pre)/numEntry*sizeof(size_type), sizeof(size_type));
+                writeDataBlock(fs, s_id, (BYTE*)buf, 0, BLOCK_SIZE);
+                allocBlock(fs, b_id);
+                writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id - pre)%numEntry*sizeof(size_type), sizeof(size_type));
+                return 0;
+            }
+            allocBlock(fs, b_id);
+            writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id - pre)%numEntry*sizeof(size_type), sizeof(size_type));
+        }
+    }
+    pre = curNum;
+    curNum += numEntry*numEntry*numEntry;
+    if(logic_id < curNum){
+        if(inode->tripleBlock == -1){
+            size_type t_id;
+            allocBlock(fs, &t_id);
+            inode->tripleBlock = t_id;
+            writeDataBlock(fs, t_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            size_type d_id;
+            allocBlock(fs, &d_id);
+            writeDataBlock(fs, t_id, (BYTE*)&d_id, (logic_id-pre)/(numEntry*numEntry)*sizeof(size_type), sizeof(size_type));
+            writeDataBlock(fs, d_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            size_type s_id;
+            allocBlock(fs, &s_id);
+            pre += (logic_id-pre)/(numEntry*numEntry);
+            writeDataBlock(fs, d_id, (BYTE*)&s_id, (logic_id-pre)%(numEntry*numEntry)*sizeof(size_type), sizeof(size_type));
+            writeDataBlock(fs, s_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            allocBlock(fs, b_id);
+            writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id%numEntry)*sizeof(size_type), sizeof(size_type));
+
+            return 0;
+        }
+        size_type d_id;
+        readDataBlock(fs, inode->tripleBlock, (BYTE*)&d_id, (logic_id-pre)/(numEntry*numEntry)*sizeof(size_type), sizeof(size_type));
+        if(d_id == -1){
+            allocBlock(fs, &d_id);
+            writeDataBlock(fs, inode->tripleBlock, (BYTE*)&d_id, (logic_id-pre)/(numEntry*numEntry)*sizeof(size_type), sizeof(size_type));
+            writeDataBlock(fs, d_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            size_type s_id;
+            allocBlock(fs, &s_id);
+            writeDataBlock(fs, d_id, (BYTE*)&s_id, (logic_id-pre)%(numEntry*numEntry)*sizeof(size_type), sizeof(size_type));
+            writeDataBlock(fs, s_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            allocBlock(fs, b_id);
+            writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id%numEntry)*sizeof(size_type), sizeof(size_type));
+            return 0;
+        }
+        size_type s_id;
+        readDataBlock(fs, d_id, (BYTE*)&s_id, (logic_id-pre)/(numEntry)*sizeof(size_type), sizeof(size_type));
+        if(s_id == -1){
+            allocBlock(fs, &s_id);
+            writeDataBlock(fs, d_id, (BYTE*) &s_id, (logic_id-pre)%(numEntry*numEntry)*sizeof(size_type), sizeof(size_type));
+            writeDataBlock(fs, s_id, (BYTE*)buf, 0, BLOCK_SIZE);
+            allocBlock(fs, b_id);
+            writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id%numEntry)*sizeof(size_type), sizeof(size_type));
+            return 0;
+        }
+        allocBlock(fs, b_id);
+        writeDataBlock(fs, s_id, (BYTE*)b_id, (logic_id%numEntry)*sizeof(size_type), sizeof(size_type));
+        return 0;
+    }
+}
+   
 
 
 //by marco
@@ -230,7 +368,7 @@ ErrorCode Potato_bfree(FileSystem *fs, Inode *inode, size_type file_block_id){
  * Error: NoInode
  */
 INT Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
-	printf("[Potato_namei] enter\n");
+	printf("[Potato_namei] enter, %s\n", path_name);
     if(path_name == 0){
         return -ENOENT;
     }
@@ -272,7 +410,10 @@ INT Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
         BYTE* buf = (BYTE*) malloc(inode.fileSize);
         //modified by peng: adding a read byte argument
         size_type readbyte;
-        readInodeData(fs, &inode, buf, 0, inode.fileSize, &readbyte);
+        if(readInodeData(fs, &inode, buf, 0, inode.fileSize, &readbyte) != Success){
+            printf("[namei] Read Inode Data failed. \n");
+            return -ENOENT;
+        }
 
         printf("[namei] file size for inode %ld: %ld\n", *inode_id, inode.fileSize);
         printf("[namei] 1st block for cur inode: %ld\n", inode.directBlock[0]); 
@@ -317,7 +458,7 @@ bool checkPermission(uint32_t permission, FileOp flag){
 }*/
 
 INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
-	printf("[Potato_open] enter\n");
+	printf("[Potato_open] enter, %s\n", path_name);
     //check if the file is already open
     OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
 
@@ -389,7 +530,7 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
     if(inode_entry != NULL)
         printf("[Potato_open] inode_entry.id: %ld\n", inode_entry->id);
     else
-        printf("[Potato_open] NULL ponter!%ld\n", inode_entry);
+        printf("[Potato_open] NULL ponter!\n");
     addInodeEntry(&(fs->inode_table), inode_id, &inode, &inode_entry);
     
     if(inode_entry != NULL)
@@ -410,8 +551,8 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
 // mounts a filesystem from a device
 INT Potato_mount(FileSystem* fs){
 	printf("[Potato_mount] enter\n");
-	printf("[Potato mount] mount called for fs: %p\n", fs);
-	printf("Reading superblock from disk...\n");
+//	printf("[Potato mount] mount called for fs: %p\n", fs);
+	//printf("Reading superblock from disk...\n");
     if(loadFS(fs) != Success){
         printf("[mount] load FS failed.");
     }
@@ -537,6 +678,8 @@ INT Potato_unmount(FileSystem* fs){
 
 	//close disk to prevent future writes
 	//defined in FileSystem.c
+    freeOpenFileTable(&(fs->open_file_table));
+    freeInodeTable(&(fs->inode_table));
 	closefs(fs);
 		 
 	return 0;
@@ -547,7 +690,7 @@ INT Potato_unmount(FileSystem* fs){
 INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
     char path[FILE_PATH_LENGTH];
     strcpy(path, i_path);
-	printf("[Potato_mknod] enter\n");
+	printf("[Potato_mknod] enter, %s\n", i_path);
 	size_type id; // the inode id of the mounted file system (child directory)
 	size_type par_id; // the inode id of the mount point (parent directory)
 	char par_path[FILE_PATH_LENGTH];
@@ -570,7 +713,7 @@ INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
         //return Err_mknod;
         return err;
     }
-    if (rRes > 0) {
+    if (err == 0) {
         printf("[Make Node] Error: file or directory %s already exists!\n", path);
         return -EEXIST;
     }
@@ -719,8 +862,8 @@ INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
 
 
 // deletes a file or directory
-INT Potato_unlink(FileSystem* fs, char* path){
-	printf("[Potato_unlink] enter\n");
+INT Potato_unlink(FileSystem* fs, char* i_path){
+	printf("[Potato_unlink] enter, %s\n", i_path);
     // 1. get the inode of the parent directory using l2_namei
     // 2. clears the corresponding entry in the parent directory table, write
     // inode number to -1
@@ -729,6 +872,8 @@ INT Potato_unlink(FileSystem* fs, char* path){
     // 5. if file link count = 0, 
     //   5.1 if file is reg file, release the inode and the data blocks
     //   5.2 if file is dir, recursively release all the concerned inodes and DBlks
+    char path[FILE_PATH_LENGTH];
+    strcpy(path, i_path);
     if (strcmp(path, "/") == 0) {
         printf("[Unlink] Error: cannot unlink root directory!\n");
         //return Err_unlink;
@@ -920,8 +1065,8 @@ INT Potato_unlink(FileSystem* fs, char* path){
 
 // makes a new directory
 INT Potato_mkdir(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
-    printf("[Potato_mkdir] enter\n");
-    printf("Potato_mkdir called for path: %s\n", i_path);
+    printf("[Potato_mkdir] enter, %s\n", i_path);
+//    printf("Potato_mkdir called for path: %s\n", i_path);
     char path[FILE_PATH_LENGTH];
     strcpy(path, i_path);
     size_type id; // the inode id associated with the new directory
@@ -943,7 +1088,7 @@ INT Potato_mkdir(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
 //        THROW(__FILE__, __LINE__, __func__);
         return -ENOTDIR;
     }
-    if (rRes > 0) {
+    if (err == 0) {
         printf("[mkdir] Error: file or directory %s already exists!\n", path);
         return -EEXIST;
     }
@@ -1129,9 +1274,11 @@ INT Potato_mkdir(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
 
 
 // reads directory contents
-INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
-	printf("[Potato_readdir] enter\n");
-	size_type id; // the inode of the dir
+INT Potato_readdir(FileSystem* fs, char* i_path, LONG offset, DirEntry* curEntry){
+	printf("[Potato_readdir] enter, %s\n", i_path);
+	char path[FILE_PATH_LENGTH];
+    strcpy(path, i_path);
+    size_type id; // the inode of the dir
     uint32_t numDirEntry = 0;
 
 	//ErrorCode Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id)
@@ -1182,7 +1329,7 @@ INT Potato_readdir(FileSystem* fs, char* path, LONG offset, DirEntry* curEntry){
 
 //change mode
 INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
-	printf("[Potato_chmod] enter\n");
+	printf("[Potato_chmod] enter, %s\n", path);
 	//1. resolve path
     size_type INode_ID;
     //l2_namei(fs, path);
@@ -1223,7 +1370,7 @@ INT Potato_chmod(FileSystem* fs, char* path, uint32_t set_permission){
 
 // getattr
 INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
-	printf("[Potato_getattr] enter\n");
+	printf("[Potato_getattr] enter, %s\n", path);
 	size_type INodeID;
 	//size_type INodeID = l2_namei(fs, path);
 	INT err = Potato_namei(fs, path, &INodeID);
@@ -1262,7 +1409,7 @@ INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
 //2. check uid/gid
 //3. set uid/gid and write inode
 INT Potato_chown(FileSystem *fs, char *path, uid_t uid, gid_t gid){
-	printf("[Potato_chown] enter\n");
+	printf("[Potato_chown] enter, %s\n", path);
 	//1. resolve path
 	size_type INodeID;
 	//INT INodeID = l2_namei(fs, path);
@@ -1297,7 +1444,7 @@ INT Potato_chown(FileSystem *fs, char *path, uid_t uid, gid_t gid){
 }
 
 INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes){
-	printf("[Potato_read] enter\n");
+	printf("[Potato_read] enter, %s\n", path_name);
     // look up open file table for an open file entry
     ErrorCode err = Success;
     OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
@@ -1326,11 +1473,12 @@ INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, si
 
 
 INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes) {
-    printf("[Potato_write] enter\n");
+    printf("[Potato_write] enter, %s\n", path_name);
     ErrorCode err = Success;
     OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
     if(file_entry == NULL){
         printf("%s: file is not open!\n", path_name);
+        return -1;
     }else if(file_entry->fileOp != WRITE && file_entry->fileOp != READWRITE) {
         printf("%s: file write access denied!, file op: %d\n", path_name, file_entry->fileOp);
         return -1;
@@ -1367,10 +1515,13 @@ INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, s
 
 
 
-INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
-	printf("[Potato_rename] enter\n");
+INT Potato_rename(FileSystem* fs, char* i_path, char* new_path_name) {
+	printf("[Potato_rename] enter, %s\n", i_path);
 	// update the open file table
-	ErrorCode err;
+	char path_name[FILE_PATH_LENGTH];
+    strcpy(path_name, i_path);
+    
+    ErrorCode err;
 	OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
 
 	if(file_entry != NULL){
@@ -1493,10 +1644,10 @@ INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
 
 
 INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
-	printf("[Potato_close] enter\n");
+	printf("[Potato_close] enter, %s\n", path_name);
     //retrieve open file entry
     OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
-    if(NULL == file_entry) {
+    if(file_entry == NULL) {
         printf("Error: no such file found in the open file table.\n");
         return 1;
     }
@@ -1517,7 +1668,7 @@ INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
 }
 
 INT Potato_truncate(FileSystem* fs, char* path_name, size_type newLen) {
-    printf("[Potato_truncate] enter\n");
+    printf("[Potato_truncate] enter, %s\n", path_name);
     ErrorCode err = Success;
     // use namei to find the inode by the path name
     size_type inode_id;

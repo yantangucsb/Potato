@@ -1,4 +1,7 @@
 #include <string.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "DataBlockAccess.h"
 
 /*
@@ -79,6 +82,46 @@ ErrorCode freeBlock(FileSystem* fs, size_type* blockId){
         fs->super_block.numOfFreeBlocks++;
         break;
     }
+
+    return Success;
+}
+
+ErrorCode writeDataBlock(FileSystem* fs, size_type block_no, BYTE* buf, size_type start, size_type size){
+    assert(block_no < fs->super_block.numOfDataBlocks);
+    assert(start < BLOCK_SIZE);
+    assert(start + size <= BLOCK_SIZE);
+
+    BYTE writeBuf[BLOCK_SIZE];
+
+    if(get(fs, block_no + fs->super_block.firstDataBlockId, writeBuf) != Success){
+        printf("[writeDataBlock] get block %ld failed\n", block_no);
+        return Err_GetBlock;
+    }
+
+
+    memcpy(writeBuf + start, buf, size);
+
+    if(put(fs, block_no + fs->super_block.firstDataBlockId, writeBuf) != Success){
+        printf("[writeDataBlock] write block %ld failed\n", block_no);
+        return Err_PutBlock;
+    }
+
+    return Success;
+}
+
+ErrorCode readDataBlock(FileSystem* fs, size_type block_no, BYTE* buf, size_type start, size_type size){
+    assert(block_no < fs->super_block.numOfDataBlocks);
+    assert(start < BLOCK_SIZE);
+    assert(start + size <= BLOCK_SIZE);
+
+    BYTE readBuf[BLOCK_SIZE];
+
+    if(get(fs, block_no + fs->super_block.firstDataBlockId, readBuf) != Success){
+        printf("[readDataBlock] get block %ld failed\n", block_no);
+        return Err_GetBlock;
+    }
+
+    memcpy(buf, readBuf + start, size);
 
     return Success;
 }

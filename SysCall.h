@@ -9,6 +9,7 @@
 
 //by yan
 ErrorCode Potato_bmap(FileSystem* fs, Inode* inode, size_type* offset, size_type* block_no, size_type* block_offset);
+INT Potato_balloc(FileSystem* fs, Inode* inode, size_type logic_id, size_type *b_id); 
 INT Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id);
 /*
  * open file

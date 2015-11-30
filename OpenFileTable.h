@@ -61,6 +61,10 @@ ErrorCode hasINodeEntry(InodeTable* inode_table, size_type inode_id);
 
 ErrorCode removeOpenFileEntry(OpenFileTable* open_file_table, char* path_name);
 
+void freeOpenFileTable(OpenFileTable* open_file_table);
+
+void freeInodeTable(InodeTable* inode_table);
+
 void printOpenFileTable(OpenFileTable* open_file_table);
 
 void printInodeTable(InodeTable* inode_table);
