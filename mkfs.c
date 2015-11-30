@@ -28,6 +28,10 @@ int main(){
     inode.directBlock[0] = block_id;
     inode.fileType = Directory;
     inode.used = true;
+    strcpy(inode.fileOwner, "NULL");
+    inode.fileModifiedTime = time(NULL);
+    inode.fileAccessTime = time(NULL);
+    inode.inodeModifiedTime = time(NULL);
     inode.Permission = S_IFDIR | 0755;
 
     DirEntry dir_entry[2];

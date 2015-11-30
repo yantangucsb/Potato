@@ -46,21 +46,23 @@ ErrorCode initOpenFileTable(OpenFileTable* open_file_table);
 
 ErrorCode initInodeTable(InodeTable* inode_table);
 
-ErrorCode getOpenFileEntry(OpenFileTable* open_file_table, char* path_name, OpenFileEntry* entry);
+OpenFileEntry* getOpenFileEntry(OpenFileTable* open_file_table, char* path_name);
 
-ErrorCode addOpenFileEntry(OpenFileTable* open_file_table, char* path_name, FileOp file_op, InodeEntry* inode_entry);
+ErrorCode addOpenFileEntry(OpenFileTable* open_file_table, char* path_name, FileOp file_op, InodeEntry** inode_entry);
 
-ErrorCode getInodeEntry(InodeTable* inode_table, size_type inode_id, InodeEntry* inode_entry);
+InodeEntry* getInodeEntry(InodeTable* inode_table, size_type inode_id);
 
 /*
  *  inode is addr of a inode, inode_entry is the addr of the entry inserted
  */
-ErrorCode addInodeEntry(InodeTable* inode_table, size_type inode_id, Inode* inode, InodeEntry* inode_entry);
+ErrorCode addInodeEntry(InodeTable* inode_table, size_type inode_id, Inode* inode, InodeEntry** inode_entry);
 
 ErrorCode hasINodeEntry(InodeTable* inode_table, size_type inode_id);
 
 ErrorCode removeOpenFileEntry(OpenFileTable* open_file_table, char* path_name);
 
+void printOpenFileTable(OpenFileTable* open_file_table);
 
+void printInodeTable(InodeTable* inode_table);
 
 

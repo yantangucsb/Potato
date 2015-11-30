@@ -2,7 +2,7 @@
 CC=gcc
 LD=gcc
 
-CFLAGS=-O2 -std=gnu99 -g
+CFLAGS=-O0 -std=gnu99 -g
 OBJS=SysCall.o OpenFileTable.o DataBlockAccess.o InodeAccess.o DiskEmulator.o FileSystem.o SuperBlock.o FreeListNode.o
 FUSEFLAGS=`pkg-config fuse --cflags --libs`
 SRCS=DiskEmulator.c

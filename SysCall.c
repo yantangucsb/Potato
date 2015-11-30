@@ -236,8 +236,10 @@ INT Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
     }
 
     //check if it is open
-    OpenFileEntry* entry;
-    getOpenFileEntry(&(fs->open_file_table), path_name, entry);
+    OpenFileEntry* entry = getOpenFileEntry(&(fs->open_file_table), path_name);
+    if(fs->open_file_table.head == NULL)
+        printf("initialized open file table.\n");
+    printf("Open File Table size: %ld\n", fs->open_file_table.nOpenFiles);
     if(entry != NULL){
         *inode_id = entry->inodeEntry->id;
         return 0;
@@ -297,7 +299,7 @@ INT Potato_namei(FileSystem* fs, char* path_name, size_type* inode_id){
     }
     return 0;
 }
-
+/*
 bool checkPermission(uint32_t permission, FileOp flag){
 	printf("[checkPermission] enter\n");
 	//owner's permission check
@@ -312,32 +314,32 @@ bool checkPermission(uint32_t permission, FileOp flag){
             return false;
     }
     return true;
-}
+}*/
 
 INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
 	printf("[Potato_open] enter\n");
     //check if the file is already open
-    OpenFileEntry* file_entry = NULL;
-    getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+    OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
 
     //if the file is open
     if(file_entry != NULL && file_entry->fileOp == flag){
-        if(checkPermission(file_entry->inodeEntry->inode.Permission, flag) == false){
+ /*       if(checkPermission(file_entry->inodeEntry->inode.Permission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
-        }
+        }*/
         file_entry->ref++;
         return 0;
     }
     
     //if the file is open but operation is different
     if(file_entry != NULL){
-        if(checkPermission(file_entry->inodeEntry->inode.Permission, flag) == false){
+/*        if(checkPermission(file_entry->inodeEntry->inode.Permission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
-
-        addOpenFileEntry(&(fs->open_file_table), path_name, flag, file_entry->inodeEntry);
+*/
+        addOpenFileEntry(&(fs->open_file_table), path_name, flag, &(file_entry->inodeEntry));
+        printf("[Potato_open] add a new open file entry.\n");
         //increase the inode ref
         file_entry->inodeEntry->ref++;
         return 0;
@@ -358,13 +360,16 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
 
     //check if the inode is in InodeTable
     InodeEntry* inode_entry = NULL;
-    getInodeEntry(&(fs->inode_table), inode_id, inode_entry);
-    if(inode_entry != NULL){
-        if(checkPermission(inode_entry->inode.Permission, flag) == false){
+    err = hasINodeEntry(&(fs->inode_table), inode_id);
+    if(err == Success){
+/*        if(checkPermission(inode_entry->inode.Permission, flag) == false){
                 printf("%s: Not enough authority to open the file", path_name);
                 return -1;
         }
-        addOpenFileEntry(&(fs->open_file_table), path_name, flag, inode_entry);
+*/
+        inode_entry = getInodeEntry(&(fs->inode_table), inode_id);
+        addOpenFileEntry(&(fs->open_file_table), path_name, flag, &inode_entry);
+        printf("[Potato_open] add a new open file entry.\n");
         inode_entry->ref++;
         return 0;
     }
@@ -375,12 +380,29 @@ INT Potato_open(FileSystem* fs, char* path_name, FileOp flag) {
         return -1;
     }
     //check permission
-    if(checkPermission(inode.Permission, flag) == false){
+/*    if(checkPermission(inode.Permission, flag) == false){
         printf("%s: Not enough authority to open the file", path_name);
         return -1;
     }
-    addInodeEntry(&(fs->inode_table), inode_id, &inode, inode_entry);
-    addOpenFileEntry(&(fs->open_file_table), path_name, flag, inode_entry);
+    */
+
+    if(inode_entry != NULL)
+        printf("[Potato_open] inode_entry.id: %ld\n", inode_entry->id);
+    else
+        printf("[Potato_open] NULL ponter!%ld\n", inode_entry);
+    addInodeEntry(&(fs->inode_table), inode_id, &inode, &inode_entry);
+    
+    if(inode_entry != NULL)
+        printf("[Potato_open] inode_entry.id: %ld\n", inode_entry->id);
+    else
+        printf("[Potato_open] NULL ponter!\n");
+    
+    addOpenFileEntry(&(fs->open_file_table), path_name, flag, &inode_entry);
+    printf("[Potato_open] add a new open file entry.\n");
+    printf("[Potato_open] add a new inode entry.\n");
+
+    printOpenFileTable(&(fs->open_file_table));
+    printInodeTable(&(fs->inode_table));
     return 0;
 }
 
@@ -680,6 +702,7 @@ INT Potato_mknod(FileSystem* fs, char* i_path, uid_t uid, gid_t gid){
 	
     inode.Permission = S_IFREG | 0666;
 
+    printf("permission for inode %ld: %d\n", id, inode.Permission);
     // init link count
     inode.numOfLinks = 1;
 
@@ -1204,7 +1227,7 @@ INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
 	size_type INodeID;
 	//size_type INodeID = l2_namei(fs, path);
 	INT err = Potato_namei(fs, path, &INodeID);
-//	printf("[Potato_getattr] inode id after namei: %ld\n", INodeID);
+	printf("[Potato_getattr] inode id after namei: %ld\n", INodeID);
     if(err < 0){ // CAUTION: need to check the return value of namei
 		printf("[getattr] Error: fail to read old parent dir\n");
 		return err;
@@ -1222,6 +1245,7 @@ INT Potato_getattr(FileSystem* fs, char *path, struct stat *stbuf) {
     stbuf->st_dev = 0;
     stbuf->st_ino = INodeID;
     stbuf->st_mode = i_node.Permission;
+    printf("permission mode: %u\n", i_node.Permission);
     stbuf->st_nlink = i_node.numOfLinks;
     stbuf->st_uid = i_node._in_uid;
     stbuf->st_gid = i_node._in_gid;
@@ -1276,8 +1300,7 @@ INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, si
 	printf("[Potato_read] enter\n");
     // look up open file table for an open file entry
     ErrorCode err = Success;
-    OpenFileEntry* file_entry;
-    getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+    OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
     if(file_entry == NULL || (file_entry->fileOp != READ && file_entry->fileOp != READWRITE)) {
         printf("%s: file read access denied!\n", path_name);
         return -1;
@@ -1305,10 +1328,11 @@ INT Potato_read(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, si
 INT Potato_write(FileSystem* fs, char* path_name, size_type offset, BYTE* buf, size_type numBytes) {
     printf("[Potato_write] enter\n");
     ErrorCode err = Success;
-    OpenFileEntry* file_entry;
-    getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
-    if(file_entry == NULL || (file_entry->fileOp != WRITE && file_entry->fileOp != READWRITE)) {
-        printf("%s: file write access denied!\n", path_name);
+    OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
+    if(file_entry == NULL){
+        printf("%s: file is not open!\n", path_name);
+    }else if(file_entry->fileOp != WRITE && file_entry->fileOp != READWRITE) {
+        printf("%s: file write access denied!, file op: %d\n", path_name, file_entry->fileOp);
         return -1;
     }
 
@@ -1347,8 +1371,7 @@ INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
 	printf("[Potato_rename] enter\n");
 	// update the open file table
 	ErrorCode err;
-	OpenFileEntry* file_entry;
-	err = getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+	OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
 
 	if(file_entry != NULL){
 		strcpy(file_entry->filePath, new_path_name);
@@ -1472,8 +1495,7 @@ INT Potato_rename(FileSystem* fs, char* path_name, char* new_path_name) {
 INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
 	printf("[Potato_close] enter\n");
     //retrieve open file entry
-    OpenFileEntry* file_entry;
-    ErrorCode err = getOpenFileEntry(&(fs->open_file_table), path_name, file_entry);
+    OpenFileEntry* file_entry = getOpenFileEntry(&(fs->open_file_table), path_name);
     if(NULL == file_entry) {
         printf("Error: no such file found in the open file table.\n");
         return 1;
@@ -1487,7 +1509,7 @@ INT Potato_close(FileSystem* fs, char* path_name, FileOp flag) {
     inode_entry->ref--;
     // remove the entry if opcount reaches 0
     if(inode_entry->ref == 0) {
-        err = removeOpenFileEntry(&(fs->open_file_table), path_name);
+        ErrorCode err = removeOpenFileEntry(&(fs->open_file_table), path_name);
         assert(err == Success);
         //CAUTION: if the number of link is 0, no ops here.
     }

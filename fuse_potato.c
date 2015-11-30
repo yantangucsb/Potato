@@ -44,6 +44,8 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	//UINT entryL = (24 + FILE_NAME_LENGTH + 7) & (~7);
 	
 	INT res = Potato_readdir(&fs, path, offset, &curEntry);
+	if (res == -1)
+		return -ENOENT;
 	while (res == 0) {
 		if (curEntry.inodeId != -1) {
 			//printf("filling %s\n", curEntry.key);
@@ -58,8 +60,6 @@ static int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		offset ++;
 		res = Potato_readdir(&fs, path, offset, &curEntry);
 	}
-	if (res == -1)
-		return -ENOENT;
 	return 0;
 }
 
@@ -140,9 +140,7 @@ static int f_open(const char *path, struct fuse_file_info *fi)
         fprintf(stderr, "Error: no file operation specified in flags!\n");
         return -EINVAL;
     }
-    #ifdef DEBUG
     printf("File operation from flags: %d\n", fileOp);
-    #endif
     
     //parse create flag
     if(fi->flags & O_CREAT) {

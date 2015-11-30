@@ -16,23 +16,24 @@ ErrorCode initInodeTable(InodeTable* inode_table){
     return Success;
 }
 
-ErrorCode getOpenFileEntry(OpenFileTable* open_file_table, char* path_name, OpenFileEntry* open_file_entry){
-    open_file_entry = open_file_table->head;
+OpenFileEntry* getOpenFileEntry(OpenFileTable* open_file_table, char* path_name){
+    OpenFileEntry* open_file_entry = open_file_table->head;
     while(open_file_entry != NULL){
         if(strcmp(open_file_entry->filePath, path_name) == 0)
-            break;
+            return open_file_entry;
         open_file_entry = open_file_entry->next;
     }
+    return NULL;
 
-    return Success;
 }
 
-ErrorCode addOpenFileEntry(OpenFileTable* open_file_table, char* path_name, FileOp file_op, InodeEntry* inode_entry) {
+ErrorCode addOpenFileEntry(OpenFileTable* open_file_table, char* path_name, FileOp file_op, InodeEntry** inode_entry) {
     //create a new entry
     OpenFileEntry* new_entry = malloc(sizeof(OpenFileEntry));
     strcpy(new_entry->filePath, path_name);
     new_entry->fileOp = file_op;
-    new_entry->inodeEntry = inode_entry;
+    new_entry->inodeEntry = *inode_entry;
+    new_entry->ref=1;
 
     //maintain the open file table
     new_entry->next = open_file_table->head;
@@ -42,28 +43,32 @@ ErrorCode addOpenFileEntry(OpenFileTable* open_file_table, char* path_name, File
     return Success;
 }
 
-ErrorCode getInodeEntry(InodeTable* inode_table, size_type inode_id, InodeEntry* inode_entry) {
+InodeEntry* getInodeEntry(InodeTable* inode_table, size_type inode_id){
     InodeEntry* cur_entry = inode_table->head;
     while(cur_entry != NULL){
         if(cur_entry->id == inode_id)
-            break;
+            return cur_entry;
         cur_entry = cur_entry->next;
     }
-    return Success;
+    return NULL;
 }
 
-ErrorCode addInodeEntry(InodeTable* inode_table, size_type inode_id, Inode* inode, InodeEntry* inode_entry){
+ErrorCode addInodeEntry(InodeTable* inode_table, size_type inode_id, Inode* inode, InodeEntry** inode_entry){
     //create an entry
-    inode_entry = malloc(sizeof(InodeEntry));
-    inode_entry->id = inode_id;
-    inode_entry->ref = 1;
-    memcpy(&inode_entry->inode, inode, sizeof(Inode));
+    *inode_entry = malloc(sizeof(InodeEntry));
+    (*inode_entry)->id = inode_id;
+    (*inode_entry)->ref = 1;
+    memcpy(&((*inode_entry)->inode), inode, sizeof(Inode));
     
     //maintain the inode table 
     inode_table->nInodes ++;
-    inode_entry->next = inode_table->head;
-    inode_table->head = inode_entry;
+    (*inode_entry)->next = inode_table->head;
+    inode_table->head = (*inode_entry);
     
+    if((*inode_entry) != NULL)
+        printf("[Potato_open] inode entry id: %ld\n", (*inode_entry)->id);
+    else
+        printf("[Potato_open] NULL ponter!\n");
     return Success;
 }
 
@@ -101,3 +106,27 @@ ErrorCode removeOpenFileEntry(OpenFileTable* open_file_table, char* path_name) {
     return NoFreeDataBlock; // need to assign a new enum entry, however, it works anyway.
 }
 
+void printOpenFileTable(OpenFileTable* open_file_table){
+    OpenFileEntry* cur_entry = open_file_table->head;
+    printf("-----Open File Table, size: %ld -----\n", open_file_table->nOpenFiles);
+    while(cur_entry != NULL){
+        printf("Path: %s, ",  cur_entry->filePath);
+        printf("fileop: %d, ", cur_entry->fileOp);
+        printf("ref: %ld, ", cur_entry->ref);
+        printf("offset: %ld, ", cur_entry->offset);
+        printf("inode id: %ld, ", cur_entry->inodeEntry->id);
+        printf("inode ref: %ld\n", cur_entry->inodeEntry->ref);
+        cur_entry = cur_entry->next;
+    }
+    printf("-----End Open File Table -----\n");
+}
+
+void printInodeTable(InodeTable* inode_table){
+    InodeEntry* cur_entry = inode_table->head;
+    printf("-----Inode Table, size: %ld -----\n", inode_table->nInodes);
+    while(cur_entry != NULL){
+        printf("id: %ld, ref: %ld\n", cur_entry->id, cur_entry->ref);
+        cur_entry = cur_entry->next;
+    }
+    printf("-----End Inode Table -----\n");
+}
